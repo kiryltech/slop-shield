@@ -27,12 +27,12 @@ class EventCoordinator(
 
     fun start(packageName: String = "ai.slopshield") {
         logger.info { "EventCoordinator: Scanning for components in $packageName..." }
-        
+
         val reflections = Reflections(packageName)
-        
+
         // 1. Discover Handlers (Listeners)
         reflections.getTypesAnnotatedWith(SlopListener::class.java).forEach { clazz ->
-            if (SlopHandler::class.java.isAssignableFrom(clazz)) {
+            if (shouldRegister(clazz) && SlopHandler::class.java.isAssignableFrom(clazz)) {
                 val handler = instantiate(clazz.kotlin) as SlopHandler<*>
                 handlers.add(handler)
                 logger.info { "EventCoordinator: Registered handler ${clazz.simpleName} for event ${handler.eventType.simpleName}" }
@@ -41,7 +41,7 @@ class EventCoordinator(
 
         // 2. Discover Services (Producers/Servers)
         reflections.getTypesAnnotatedWith(SlopService::class.java).forEach { clazz ->
-            if (SlopServiceLifecycle::class.java.isAssignableFrom(clazz)) {
+            if (shouldRegister(clazz) && SlopServiceLifecycle::class.java.isAssignableFrom(clazz)) {
                 val service = instantiate(clazz.kotlin) as SlopServiceLifecycle
                 services.add(service)
                 service.start()
@@ -79,16 +79,34 @@ class EventCoordinator(
             }
     }
 
+    private fun shouldRegister(clazz: Class<*>): Boolean {
+        val enabledAnnotation = clazz.getAnnotation(Enabled::class.java)
+            ?: return true
+
+        return try {
+            val enabled = enabledAnnotation.condition.createInstance().isEnabled()
+
+            if (!enabled) {
+                logger.debug { "EventCoordinator: Skipping ${clazz.simpleName} because condition ${enabledAnnotation.condition.simpleName} was not met." }
+            }
+
+            enabled
+        } catch (e: Exception) {
+            logger.error(e) { "EventCoordinator: Failed to evaluate condition for ${clazz.name}" }
+            false
+        }
+    }
+
     private fun instantiate(clazz: KClass<*>): Any {
         val constructor = clazz.primaryConstructor ?: return clazz.createInstance()
-        
+
         val args = mutableMapOf<KParameter, Any?>()
         constructor.parameters.forEach { param ->
             val paramType = param.type.classifier as? KClass<*>
-            val dependency = registry.entries.find { (type, _) -> 
+            val dependency = registry.entries.find { (type, _) ->
                 paramType != null && type.isSubclassOf(paramType)
             }?.value
-            
+
             if (dependency != null) {
                 args[param] = dependency
             } else if (!param.isOptional) {

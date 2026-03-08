@@ -1,22 +1,53 @@
 package ai.slopshield.core
 
-import java.lang.reflect.ParameterizedType
 import java.time.Instant
 import kotlin.reflect.KClass
+import java.lang.reflect.ParameterizedType
+
+/**
+ * Functional interface for evaluating whether a component should be enabled.
+ */
+interface EnabledIf {
+    fun isEnabled(): Boolean
+}
+
+/**
+ * Default implementation that checks a system property.
+ */
+class SystemPropertyCondition(
+    private val property: String,
+    private val expected: String
+) : EnabledIf {
+    override fun isEnabled(): Boolean = System.getProperty(property) == expected
+}
+
+/**
+ * Specific condition for debug mode.
+ */
+class DebugEnabledCondition : EnabledIf {
+    override fun isEnabled()= java.lang.Boolean.getBoolean("slopshield.debug")
+}
 
 /**
  * Annotation to mark a class as an event listener.
- * These will be discovered and instantiated by the [EventCoordinator].
  */
 @Target(AnnotationTarget.CLASS)
 annotation class SlopListener
 
 /**
  * Annotation to mark a class as a standalone domain service.
- * These will be discovered and started by the [EventCoordinator].
  */
 @Target(AnnotationTarget.CLASS)
 annotation class SlopService
+
+/**
+ * Conditional annotation to control component initialization.
+ * 
+ * @param condition A class implementing [EnabledIf] that will be used to evaluate
+ * whether this component should be registered.
+ */
+@Target(AnnotationTarget.CLASS)
+annotation class Enabled(val condition: KClass<out EnabledIf>)
 
 /**
  * Interface for active domain services that need explicit starting and optional stopping.
@@ -50,16 +81,11 @@ interface SlopHandler<T : SlopEvent> {
 
     /**
      * Optional filter to further refine which events are processed.
-     * 
-     * @param event The event to check.
-     * @return True if the handler can process this specific event instance.
      */
     fun canHandle(event: T): Boolean = true
 
     /**
      * Processes the event.
-     * 
-     * @param event The event instance to process.
      */
     suspend fun onEvent(event: T)
 }
@@ -80,18 +106,12 @@ sealed interface SlopEvent {
 interface ProjectableEvent : SlopEvent {
     /**
      * Projects the event's data into the repository.
-     * 
-     * @param repository The story repository to update.
      */
     fun project(repository: StoryRepository)
 }
 
 /**
  * Triggered by the Scout when a new story is identified from an external source (e.g., Hacker News).
- *
- * @property id The unique identifier from the source system.
- * @property title The headline of the story.
- * @property url The direct link to the story content.
  */
 data class StoryDiscovered(
     val id: String,
@@ -106,11 +126,6 @@ data class StoryDiscovered(
 
 /**
  * Triggered by the Harvester after successfully extracting and cleaning text from a story's URL.
- *
- * @property storyId References the original [StoryDiscovered.id].
- * @property cleanText The raw, fluff-free text ready for AI analysis.
- * @property errorText The error output from the scraper (if any).
- * @property exitCode The exit code of the scraper process.
  */
 data class HarvestComplete(
     val storyId: String,
@@ -130,24 +145,11 @@ data class HarvestComplete(
  * Categories for the identified content type.
  */
 enum class StoryCategory {
-    /** Articles, blog posts, essays, news stories. */
-    WRITING,
-    /** SaaS landing pages, commercial products, tools for sale, marketing materials. */
-    PRODUCT,
-    /** Technical demos, interactive experiments, "Show HN" style prototypes. */
-    DEMO,
-    /** Source code repositories (e.g., GitHub, GitLab). */
-    SOURCE,
-    /** Content that doesn't fit the above categories. */
-    UNKNOWN
+    WRITING, PRODUCT, DEMO, SOURCE, UNKNOWN
 }
 
 /**
  * Triggered by the Strategist after identifying the type of content.
- *
- * @property storyId References the original [StoryDiscovered.id].
- * @property category The identified type of content.
- * @property reasoning The AI's explanation for this categorization.
  */
 data class StoryCategorized(
     val storyId: String,
@@ -162,51 +164,22 @@ data class StoryCategorized(
 
 /**
  * Triggered by the Memory domain in response to a context request.
- * Contains the aggregated personal "Source of Truth" for The Curator.
- *
- * @property content The aggregated local corpus (markdown files, RSS drafts, etc.).
  */
 data class ContextResponse(
     val content: String,
     override val timestamp: Instant = Instant.now()
 ) : SlopEvent
 
-/**
- * How the story aligns with the user's body of work.
- */
 enum class Alignment {
-    /** Reinforces what you already know/believe. */
-    ECHO_CHAMBER,
-    /** Challenges your existing views or provides a different perspective. */
-    OPPOSITE_VIEW,
-    /** Adds new information that fits well with your current knowledge. */
-    COMPLEMENTARY
+    ECHO_CHAMBER, OPPOSITE_VIEW, COMPLEMENTARY
 }
 
-/**
- * The detected level of hype or "slop" in the content.
- */
 enum class HypeRisk {
-    /** Low signal of hype, looks like genuine insight. */
-    LOW,
-    /** Moderate buzzword usage or promotional tone. */
-    MEDIUM,
-    /** High-hype, low-signal content. */
-    HIGH
+    LOW, MEDIUM, HIGH
 }
 
 /**
  * The final output of the Strategist (The Curator).
- * Contains the deep analysis and SECV scoring of a story.
- *
- * @property storyId References the original [StoryDiscovered.id].
- * @property mms Mental Model Shift score (1-10).
- * @property sa Strategic Actionability score (1-10).
- * @property sd Signal Density score (1-10).
- * @property d Durability score (1-10).
- * @property alignment How the story aligns with your body of work.
- * @property hypeRisk The detected level of hype.
- * @property sparringNote A personalized note explaining why this story matters (or doesn't).
  */
 data class AnalysisComplete(
     val storyId: String,

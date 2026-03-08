@@ -9,6 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlin.reflect.KClass
 
@@ -18,7 +19,7 @@ private val logger = KotlinLogging.logger {}
  * The application context responsible for IoC, dependency injection, and lifecycle management.
  * It coordinates the initialization and shutdown of all infrastructure and domain services.
  */
-class AppContext(private val scope: CoroutineScope) {
+class AppContext(private val scope: CoroutineScope) : AutoCloseable {
     
     private val httpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
@@ -55,4 +56,13 @@ class AppContext(private val scope: CoroutineScope) {
         httpClient.close()
         repository.close()
     }
+
+    override fun close() {
+        scope.launch {
+            logger.info { "🛡️ SlopShield is shutting down..." }
+            stop()
+        }
+    }
+
+
 }

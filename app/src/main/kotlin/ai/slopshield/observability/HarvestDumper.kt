@@ -1,5 +1,7 @@
 package ai.slopshield.observability
 
+import ai.slopshield.core.DebugEnabledCondition
+import ai.slopshield.core.Enabled
 import ai.slopshield.core.HarvestComplete
 import ai.slopshield.core.SlopHandler
 import ai.slopshield.core.SlopListener
@@ -13,6 +15,7 @@ private val logger = KotlinLogging.logger {}
  * A debug component that dumps harvested story content to disk.
  */
 @SlopListener
+@Enabled(DebugEnabledCondition::class)
 class HarvestDumper : SlopHandler<HarvestComplete> {
     
     private val pid = ProcessHandle.current().pid()

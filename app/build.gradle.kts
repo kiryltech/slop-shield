@@ -75,5 +75,4 @@ java {
 application {
     // Define the main class for the application.
     mainClass.set("ai.slopshield.AppKt")
-    applicationDefaultJvmArgs = listOf("-Dslopshield.ai.scout.limit=5")
 }
