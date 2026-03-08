@@ -4,9 +4,9 @@ This document outlines the incremental development phases for **Project SlopShie
 
 ## Phase 1: Foundation & The Domain Event Stream
 **Goal:** Establish the "Modular Monolith" architecture using Kotlin Coroutines and Channels.
-- [ ] Define internal `Event` types: `StoryDiscovered`, `HarvestComplete`, `ContextResponse`, `AnalysisComplete`.
-- [ ] Implement the `InternalDomainEventStream` using Kotlin `Channels` for non-blocking communication.
-- [ ] Scaffold the domain packages: `scout`, `harvester`, `memory`, `strategist`, `observability`.
+- [x] Define internal `Event` types: `StoryDiscovered`, `HarvestComplete`, `ContextResponse`, `AnalysisComplete`.
+- [x] Implement the `InternalDomainEventStream` using Kotlin `Channels` for non-blocking communication.
+- [x] Scaffold the domain packages: `scout`, `harvester`, `memory`, `strategist`, `observability`.
 
 ## Phase 2: The Scout & The Harvester
 **Goal:** Fetch content and extract clean text.
