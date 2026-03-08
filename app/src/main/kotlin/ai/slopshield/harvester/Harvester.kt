@@ -9,6 +9,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.net.URI
 import java.util.concurrent.TimeUnit
@@ -23,20 +25,28 @@ class Harvester(
     private val scope: CoroutineScope,
     private val eventStream: DomainEventStream,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val maxParallelHarvests: Int = 3,
     private val scraper: (String) -> String = ::runGeminiScraper
 ) {
+    private val semaphore = Semaphore(maxParallelHarvests)
+
     fun start() {
         scope.launch {
             eventStream.events
                 .filterIsInstance<StoryDiscovered>()
                 .collect { event ->
-                    harvest(event)
+                    // Process each story in its own coroutine, subject to semaphore limits
+                    launch { 
+                        semaphore.withPermit {
+                            harvest(event)
+                        }
+                    }
                 }
         }
     }
 
     private suspend fun harvest(event: StoryDiscovered) {
-        logger.debug { "Harvester: Harvesting clean text for story: ${event.title} (${event.url})" }
+        logger.info { "Harvester: Harvesting clean text for story: ${event.title} (${event.url})" }
         
         withContext(ioDispatcher) {
             try {
