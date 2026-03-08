@@ -46,12 +46,12 @@ The internal intelligence driving the analysis is known as **The Curator**.
 
 ### **D. The Strategist (Analysis Domain - "The Curator")**
 *   **Responsibility:** Orchestrates the AI pipeline.
-*   **The SECV-S Scoring Rubric (1-10):**
-    *   **MMS (Mental Model Shift):** Does this change how I think, or just confirm what I know?
-    *   **SA (Strategic Actionability):** Can I make a decision based on this today?
-    *   **SD (Signal Density):** Is it "fluff-free"?
-    *   **D (Durability):** Will this matter in 2 years?
-    *   **S (Serendipity):** Is it unexpectedly fascinating, even if "useless"?
+*   **The SECV Scoring Rubric (Strategic Engineering & Cognitive Value):**
+    A specialized framework designed to bridge the gap between "interesting news" and "actionable engineering strategy."
+    *   **MMS (Mental Model Shift):** Does this change how you think, or just confirm what you already know?
+    *   **SA (Strategic Actionability):** Can you make a concrete decision or take action based on this today?
+    *   **SD (Signal Density):** Is it "meat" (high-information) or "fluff" (low-signal filler)?
+    *   **D (Durability):** Will this information still be relevant and valuable in 2 years?
 *   **Dual-Path Analysis:**
     1.  **Personal Alignment:** `Echo Chamber`, `Opposite View`, or `Complementary`.
     2.  **Hype Detection:** Identifies "Hype Surfers" vs. "Genuine Insight."
@@ -70,7 +70,7 @@ The internal intelligence driving the analysis is known as **The Curator**.
 | `StoryDiscovered` | Scout | Contains story metadata and URL. |
 | `HarvestComplete` | Harvester | Contains extracted clean text. |
 | `ContextResponse` | Memory | Returns the aggregated text of your body of work. |
-| `AnalysisComplete` | Strategist | Contains SECV-S scores, Alignment labels, and **Hype/Noise Red Flags**. |
+| `AnalysisComplete` | Strategist | Contains SECV scores, Alignment labels, and **Hype/Noise Red Flags**. |
 
 ---
 
@@ -80,8 +80,8 @@ The internal intelligence driving the analysis is known as **The Curator**.
 **URL:** `https://example.com/anti-kafka-rant`
 
 **The Curator's Assessment:**
-*   **SECV-S Score:** 8.5/10
-*   **MMS:** 9 | **SA:** 4 | **SD:** 8 | **D:** 7 | **S:** 9
+*   **SECV Score:** 8.25/10
+*   **MMS:** 9 | **SA:** 4 | **SD:** 8 | **D:** 7
 *   **Alignment:** **OPPOSITE VIEW** (High Contrast to your "Modular Monolith" thesis).
 *   **Hype Risk:** Low (Original argument, no buzzwords).
 
