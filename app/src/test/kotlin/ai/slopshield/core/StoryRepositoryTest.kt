@@ -1,0 +1,61 @@
+package ai.slopshield.core
+
+import org.mapdb.DBMaker
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+
+class StoryRepositoryTest {
+    private lateinit var repository: StoryRepository
+
+    @BeforeTest
+    fun setup() {
+        val db = DBMaker.memoryDB().transactionEnable().make()
+        repository = StoryRepository(db)
+    }
+
+    @AfterTest
+    fun tearDown() {
+        repository.close()
+    }
+
+    @Test
+    fun `test upsert and get`() {
+        val story = Story(id = "1", title = "Test Story", url = "http://example.com")
+        repository.upsert(story)
+
+        val retrieved = repository.get("1")
+        assertNotNull(retrieved)
+        assertEquals(story.title, retrieved.title)
+    }
+
+    @Test
+    fun `test update with transform`() {
+        val story = Story(id = "1", title = "Test Story", url = "http://example.com")
+        repository.upsert(story)
+
+        repository.update("1") { it.copy(cleanText = "Transformed text") }
+
+        val retrieved = repository.get("1")
+        assertNotNull(retrieved)
+        assertEquals("Transformed text", retrieved.cleanText)
+    }
+
+    @Test
+    fun `test update non-existent story`() {
+        repository.update("999") { it.copy(cleanText = "Fail") }
+        assertNull(repository.get("999"))
+    }
+
+    @Test
+    fun `test getAll as sequence`() {
+        repository.upsert(Story(id = "1", title = "S1", url = "url1"))
+        repository.upsert(Story(id = "2", title = "S2", url = "url2"))
+
+        val all = repository.getAll().toList()
+        assertEquals(2, all.size)
+    }
+}

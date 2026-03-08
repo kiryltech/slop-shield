@@ -2,6 +2,7 @@ package ai.slopshield.core
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import org.reflections.Reflections
@@ -24,6 +25,7 @@ class EventCoordinator(
 ) {
     private val handlers = mutableListOf<SlopHandler<*>>()
     private val services = mutableListOf<SlopServiceLifecycle>()
+    private var dispatchJob: kotlinx.coroutines.Job? = null
 
     fun start(packageName: String = "ai.slopshield") {
         logger.info { "EventCoordinator: Scanning for components in $packageName..." }
@@ -50,7 +52,7 @@ class EventCoordinator(
         }
 
         // 3. Start Event Dispatch Loop
-        scope.launch {
+        dispatchJob = scope.launch(SupervisorJob()) {
             eventStream.collect { event ->
                 dispatch(event)
             }
@@ -59,6 +61,7 @@ class EventCoordinator(
 
     fun stop() {
         logger.info { "EventCoordinator: Stopping all services..." }
+        dispatchJob?.cancel()
         services.forEach { it.stop() }
     }
 
