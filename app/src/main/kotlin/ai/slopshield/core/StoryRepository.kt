@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.mapdb.DB
 import org.mapdb.DBMaker
 import org.mapdb.Serializer
+import org.mapdb.serializer.GroupSerializer
 import java.io.Serializable
 import java.util.concurrent.ConcurrentMap
 
@@ -35,9 +36,9 @@ class StoryRepository(
 
     // Persistent Map for stories
     private val stories: ConcurrentMap<String, Story> = db
-        .hashMap("stories")
+        .treeMap("stories")
         .keySerializer(Serializer.STRING)
-        .valueSerializer(Serializer.JAVA as Serializer<Story>)
+        .valueSerializer(Serializer.JAVA as GroupSerializer<Story>)
         .createOrOpen()
 
     /**
