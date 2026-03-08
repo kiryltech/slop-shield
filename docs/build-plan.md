@@ -4,15 +4,16 @@ This document outlines the incremental development phases for **Project SlopShie
 
 ## Phase 1: Foundation & The Message Bus
 **Goal:** Establish the "Modular Monolith" architecture using Kotlin Coroutines and Channels.
-- [ ] Define internal `Event` types: `StoryDiscovered`, `ContextResponse`, `AnalysisComplete`.
+- [ ] Define internal `Event` types: `StoryDiscovered`, `HarvestComplete`, `ContextResponse`, `AnalysisComplete`.
 - [ ] Implement the `InternalBus` using Kotlin `Channels` for non-blocking communication.
-- [ ] Scaffold the domain packages: `scout`, `memory`, `strategist`, `observability`.
+- [ ] Scaffold the domain packages: `scout`, `harvester`, `memory`, `strategist`, `observability`.
 
-## Phase 2: The Scout (Ingestion)
-**Goal:** Fetch content from the outside world.
+## Phase 2: The Scout & The Harvester
+**Goal:** Fetch content and extract clean text.
 - [ ] Integrate with [HN Firebase API](https://github.com/HackerNews/API).
-- [ ] Implement a periodic poller for top stories.
-- [ ] Publish `StoryDiscovered` events to the Bus.
+- [ ] Implement a periodic poller for top stories in the **Scout**.
+- [ ] Implement **The Harvester** using the Gemini CLI for initial URL-to-Text extraction.
+- [ ] Orchestrate the flow: `StoryDiscovered` -> `HarvestComplete`.
 
 ## Phase 3: The Memory (Contextual Knowledge)
 **Goal:** Ingest the user's personal "Source of Truth."
@@ -22,18 +23,18 @@ This document outlines the incremental development phases for **Project SlopShie
 
 ## Phase 4: The Strategist (The Curator)
 **Goal:** The AI brain of the operation.
-- [ ] Create a robust wrapper for the `gemini` CLI.
+- [ ] Create a robust wrapper for the `gemini` CLI for analysis.
 - [ ] Implement the **SECV Scoring Rubric** (Mental Model Shift, Strategic Actionability, Signal Density, Durability).
 - [ ] Implement the Dual-Path Analysis:
-    - **Personal Alignment:** Echo Chamber vs. Opposite View.
+    - **Personal Alignment:** Echo Chamber vs. Opposite View (Priority on High-Signal Disagreement).
     - **Hype Detection:** Genuine Insight vs. Hype Surfers.
 - [ ] Generate the "Sparring Output" notes.
 
 ## Phase 5: Persistence & Observability
 **Goal:** Stop "losing" state and start monitoring.
-- [ ] Set up **MapDB** with `transactionEnable()` for crash consistency.
-- [ ] Track pipeline state: `DISCOVERED` -> `SCRAPING` -> `ANALYZING` -> `FILTERED`.
-- [ ] Implement basic logging/metrics for the "Kafka-style" satire.
+- [ ] Set up **MapDB** with `transactionEnable()` and `BTreeMap` for sorted story indexing.
+- [ ] Track pipeline state: `DISCOVERED` -> `HARVESTING` -> `ANALYZING` -> `FILTERED`.
+- [ ] Implement basic logging/metrics for the "Satirical Observability" domain.
 
 ## Phase 6: Delivery & UI
 **Goal:** A functional prototype for daily use.
