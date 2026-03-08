@@ -19,7 +19,13 @@ The internal intelligence driving the analysis is known as **The Curator**.
 *   **Concurrency:** Kotlin **Coroutines** & **Channels** (simulating the internal Message Bus).
 *   **AI Engine:** **The Curator** (a Gemini CLI Wrapper). The system executes local Gemini CLI sessions to perform deep analysis while maintaining local auth and cost efficiency.
 *   **Memory Strategy:** **Full-Context Injection**. The "Memory" module aggregates the entire local corpus into the LLM context window for V1.
-*   **Persistence:** Local **SQLite** for long-term storage of signal and noise.
+*   **Persistence:** **MapDB** (Embedded NoSQL).
+    *   *Why MapDB?* Provides a "zero-boilerplate" experience by persisting standard Kotlin Maps to disk.
+    *   *Reliability:* Configured with Write-Ahead Logging (WAL) and ACID transactions to ensure data consistency even during abnormal shutdowns.
+    *   *Alternatives Considered:*
+        *   **SQLite:** Traditional, but requires SQL mapping/migrations.
+        *   **Xodus (JetBrains):** Modern and "Kotlin-idiomatic," but slightly more complex than simple Maps.
+        *   **H2:** SQL-based and JVM-native, but carries more overhead than needed for simple signal storage.
 
 ---
 

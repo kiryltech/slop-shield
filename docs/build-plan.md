@@ -31,7 +31,7 @@ This document outlines the incremental development phases for **Project SlopShie
 
 ## Phase 5: Persistence & Observability
 **Goal:** Stop "losing" state and start monitoring.
-- [ ] Set up local **SQLite** via Exposed or SQLDelight.
+- [ ] Set up **MapDB** with `transactionEnable()` for crash consistency.
 - [ ] Track pipeline state: `DISCOVERED` -> `SCRAPING` -> `ANALYZING` -> `FILTERED`.
 - [ ] Implement basic logging/metrics for the "Kafka-style" satire.
 
