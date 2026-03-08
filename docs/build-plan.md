@@ -23,7 +23,8 @@ This document outlines the incremental development phases for **Project SlopShie
 
 ## Phase 4: The Strategist (The Curator)
 **Goal:** The AI brain of the operation.
-- [ ] Create a robust wrapper for the `gemini` CLI for analysis.
+- [x] Create a robust wrapper for the `gemini` CLI for analysis (Implemented as `AIService`).
+- [x] Implement initial story categorization (Implemented as `Categorizer`).
 - [ ] Implement the **SECV Scoring Rubric** (Mental Model Shift, Strategic Actionability, Signal Density, Durability).
 - [ ] Implement the Dual-Path Analysis:
     - **Personal Alignment:** Echo Chamber vs. Opposite View (Priority on High-Signal Disagreement).
@@ -33,8 +34,10 @@ This document outlines the incremental development phases for **Project SlopShie
 ## Phase 5: Persistence & Observability
 **Goal:** Stop "losing" state and start monitoring.
 - [ ] Set up **MapDB** with `transactionEnable()` and `BTreeMap` for sorted story indexing.
-- [ ] Track pipeline state: `DISCOVERED` -> `HARVESTING` -> `ANALYZING` -> `FILTERED`.
+- [x] Implement **StoryProjector** for centralized state management.
+- [x] Track pipeline state through **ProjectableEvent** pattern.
 - [ ] Implement basic logging/metrics for the "Satirical Observability" domain.
+- [x] Implement **HarvestDumper** for debug disk persistence.
 
 ## Phase 6: Delivery & UI
 **Goal:** A functional prototype for daily use.
