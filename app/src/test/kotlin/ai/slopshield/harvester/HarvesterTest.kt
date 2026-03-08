@@ -2,13 +2,14 @@ package ai.slopshield.harvester
 
 import ai.slopshield.core.AIResult
 import ai.slopshield.core.HarvestComplete
-import ai.slopshield.core.InternalDomainEventStream
+import ai.slopshield.core.SlopEvent
 import ai.slopshield.core.StoryDiscovered
 import ai.slopshield.core.AIService
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -36,11 +37,6 @@ class MockAIService : AIService(maxParallelTasks = 1) {
 @OptIn(ExperimentalCoroutinesApi::class)
 class HarvesterTest {
 
-    @BeforeTest
-    fun setup() {
-        InternalDomainEventStream.reset()
-    }
-
     @Test
     fun `test harvester reacts to StoryDiscovered and emits HarvestComplete`() = runTest {
         val storyId = "123"
@@ -66,25 +62,26 @@ class HarvesterTest {
             mockResult = AIResult(expectedText, "", 0)
         }
 
+        val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
         val harvester = Harvester(
             httpClient = httpClient,
-            emit = { event -> InternalDomainEventStream.emit(event) },
+            collector = eventStream,
             aiService = mockAIService
         )
         
         // Manual event processing for unit test (avoiding EventCoordinator complexity)
         backgroundScope.launch {
-            InternalDomainEventStream.events
+            eventStream
                 .filterIsInstance<StoryDiscovered>()
                 .collect { harvester.onEvent(it) }
         }
 
         // Emit discovery event
-        InternalDomainEventStream.emit(
+        eventStream.emit(
             StoryDiscovered(id = storyId, title = storyTitle, url = storyUrl)
         )
 
-        val harvestEvents = InternalDomainEventStream.events
+        val harvestEvents = eventStream
             .filterIsInstance<HarvestComplete>()
             .take(1)
             .toList()

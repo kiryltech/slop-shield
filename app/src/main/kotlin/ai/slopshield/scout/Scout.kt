@@ -1,6 +1,6 @@
 package ai.slopshield.scout
 
-import ai.slopshield.core.SlopEmitter
+import ai.slopshield.core.SlopEvent
 import ai.slopshield.core.StoryDiscovered
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -11,6 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.serialization.Serializable
 import java.time.Duration
 import java.util.*
@@ -32,7 +33,7 @@ data class HnStory(
 class Scout(
     private val scope: CoroutineScope,
     private val client: HttpClient,
-    private val emit: SlopEmitter,
+    private val collector: FlowCollector<SlopEvent>,
     private val pollInterval: Duration = Duration.ofMinutes(15),
     private val limit: Int = Integer.getInteger("slopshield.ai.scout.limit", 30)
 ) {
@@ -78,7 +79,7 @@ class Scout(
                     val storyUrl = story.url
                     if (story.type == "story" && storyUrl != null) {
                         logger.info { "Scout: Discovered new story: ${story.title}" }
-                        emit(
+                        collector.emit(
                             StoryDiscovered(
                                 id = story.id.toString(),
                                 title = story.title,

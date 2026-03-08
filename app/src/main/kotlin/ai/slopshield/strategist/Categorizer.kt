@@ -2,12 +2,13 @@ package ai.slopshield.strategist
 
 import ai.slopshield.core.AIService
 import ai.slopshield.core.HarvestComplete
-import ai.slopshield.core.SlopEmitter
+import ai.slopshield.core.SlopEvent
 import ai.slopshield.core.SlopHandler
 import ai.slopshield.core.SlopListener
 import ai.slopshield.core.StoryCategorized
 import ai.slopshield.core.StoryCategory
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -26,7 +27,7 @@ data class CategorizationResult(
  */
 @SlopListener
 class Categorizer(
-    private val emit: SlopEmitter,
+    private val collector: FlowCollector<SlopEvent>,
     private val aiService: AIService
 ) : SlopHandler<HarvestComplete> {
 
@@ -66,7 +67,7 @@ class Categorizer(
 
                 logger.info { "Categorizer: Story ${event.storyId} categorized as $category. Reasoning: ${parsed.reasoning}" }
                 
-                emit(
+                collector.emit(
                     StoryCategorized(
                         storyId = event.storyId,
                         category = category,

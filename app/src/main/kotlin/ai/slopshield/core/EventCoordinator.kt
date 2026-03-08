@@ -2,6 +2,7 @@ package ai.slopshield.core
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import org.reflections.Reflections
 import kotlin.reflect.KClass
@@ -17,7 +18,7 @@ private val logger = KotlinLogging.logger {}
  */
 class EventCoordinator(
     private val scope: CoroutineScope,
-    private val eventStream: DomainEventStream,
+    private val eventStream: SharedFlow<SlopEvent>,
     private val registry: Map<KClass<*>, Any>
 ) {
     private val handlers = mutableListOf<SlopHandler<*>>()
@@ -42,7 +43,7 @@ class EventCoordinator(
 
         // Start listening
         scope.launch {
-            eventStream.events.collect { event ->
+            eventStream.collect { event ->
                 dispatch(event)
             }
         }

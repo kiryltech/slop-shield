@@ -5,19 +5,16 @@ import kotlin.reflect.KClass
 import java.lang.reflect.ParameterizedType
 
 /**
- * Functional interface for emitting events into the stream.
- */
-typealias SlopEmitter = suspend (SlopEvent) -> Unit
-
-/**
  * Annotation to mark a class as an event listener.
- * These will be discovered and instantiated by the EventCoordinator.
+ * These will be discovered and instantiated by the [EventCoordinator].
  */
 @Target(AnnotationTarget.CLASS)
 annotation class SlopListener
 
 /**
  * Interface for components that handle domain events.
+ * 
+ * @param T The specific type of [SlopEvent] this handler processes.
  */
 interface SlopHandler<T : SlopEvent> {
     /**
@@ -38,11 +35,16 @@ interface SlopHandler<T : SlopEvent> {
 
     /**
      * Optional filter to further refine which events are processed.
+     * 
+     * @param event The event to check.
+     * @return True if the handler can process this specific event instance.
      */
     fun canHandle(event: T): Boolean = true
 
     /**
      * Processes the event.
+     * 
+     * @param event The event instance to process.
      */
     suspend fun onEvent(event: T)
 }
@@ -63,6 +65,8 @@ sealed interface SlopEvent {
 interface ProjectableEvent : SlopEvent {
     /**
      * Projects the event's data into the repository.
+     * 
+     * @param repository The story repository to update.
      */
     fun project(repository: StoryRepository)
 }
@@ -168,8 +172,11 @@ enum class Alignment {
  * The detected level of hype or "slop" in the content.
  */
 enum class HypeRisk {
+    /** Low signal of hype, looks like genuine insight. */
     LOW,
+    /** Moderate buzzword usage or promotional tone. */
     MEDIUM,
+    /** High-hype, low-signal content. */
     HIGH
 }
 

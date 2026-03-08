@@ -2,7 +2,7 @@ package ai.slopshield.harvester
 
 import ai.slopshield.core.AIService
 import ai.slopshield.core.HarvestComplete
-import ai.slopshield.core.SlopEmitter
+import ai.slopshield.core.SlopEvent
 import ai.slopshield.core.SlopHandler
 import ai.slopshield.core.SlopListener
 import ai.slopshield.core.StoryDiscovered
@@ -11,6 +11,7 @@ import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import kotlinx.coroutines.flow.FlowCollector
 import java.net.URI
 
 private val logger = KotlinLogging.logger {}
@@ -26,7 +27,7 @@ private const val scraperPrompt =
 @SlopListener
 class Harvester(
     private val httpClient: HttpClient,
-    private val emit: SlopEmitter,
+    private val collector: FlowCollector<SlopEvent>,
     private val aiService: AIService
 ) : SlopHandler<StoryDiscovered> {
 
@@ -54,7 +55,7 @@ class Harvester(
             
             logger.info { "Harvester: AI process finished for ${event.title} with exit code: ${result.exitCode}" }
             
-            emit(
+            collector.emit(
                 HarvestComplete(
                     storyId = event.id,
                     cleanText = result.stdout,

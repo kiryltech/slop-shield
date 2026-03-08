@@ -1,6 +1,6 @@
 package ai.slopshield.scout
 
-import ai.slopshield.core.InternalDomainEventStream
+import ai.slopshield.core.SlopEvent
 import ai.slopshield.core.StoryDiscovered
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
@@ -8,6 +8,7 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -21,11 +22,6 @@ import kotlin.test.assertEquals
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ScoutTest {
-
-    @BeforeTest
-    fun setup() {
-        InternalDomainEventStream.reset()
-    }
 
     @Test
     fun `test scout discovers new stories`() = runTest {
@@ -63,12 +59,13 @@ class ScoutTest {
             }
         }
 
-        val scout = Scout(this, httpClient, { event -> InternalDomainEventStream.emit(event) }, pollInterval = Duration.ofMinutes(15), limit = 2)
+        val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
+        val scout = Scout(this, httpClient, eventStream, pollInterval = Duration.ofMinutes(15), limit = 2)
         
         // Directly trigger polling
         scout.pollTopStories()
         
-        val discoveredEvents = InternalDomainEventStream.events
+        val discoveredEvents = eventStream
             .filterIsInstance<StoryDiscovered>()
             .take(2)
             .toList()

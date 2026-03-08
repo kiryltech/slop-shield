@@ -2,11 +2,12 @@ package ai.slopshield.strategist
 
 import ai.slopshield.core.AIResult
 import ai.slopshield.core.HarvestComplete
-import ai.slopshield.core.InternalDomainEventStream
 import ai.slopshield.core.StoryCategorized
 import ai.slopshield.core.StoryCategory
+import ai.slopshield.core.SlopEvent
 import ai.slopshield.harvester.MockAIService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -19,11 +20,6 @@ import kotlin.test.assertEquals
 @OptIn(ExperimentalCoroutinesApi::class)
 class CategorizerTest {
 
-    @BeforeTest
-    fun setup() {
-        InternalDomainEventStream.reset()
-    }
-
     @Test
     fun `test categorizer reacts to HarvestComplete and emits StoryCategorized`() = runTest {
         val storyId = "123"
@@ -34,23 +30,24 @@ class CategorizerTest {
             mockResult = AIResult(mockAiResponse, "", 0)
         }
 
+        val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
         val categorizer = Categorizer(
-            emit = { event -> InternalDomainEventStream.emit(event) },
+            collector = eventStream,
             aiService = mockAIService
         )
         
         backgroundScope.launch {
-            InternalDomainEventStream.events
+            eventStream
                 .filterIsInstance<HarvestComplete>()
                 .collect { categorizer.onEvent(it) }
         }
 
         // Emit harvest complete event
-        InternalDomainEventStream.emit(
+        eventStream.emit(
             HarvestComplete(storyId = storyId, cleanText = cleanText, errorText = "", exitCode = 0)
         )
 
-        val categorizedEvents = InternalDomainEventStream.events
+        val categorizedEvents = eventStream
             .filterIsInstance<StoryCategorized>()
             .take(1)
             .toList()
@@ -71,23 +68,24 @@ class CategorizerTest {
             mockResult = AIResult(mockAiResponse, "", 0)
         }
 
+        val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
         val categorizer = Categorizer(
-            emit = { event -> InternalDomainEventStream.emit(event) },
+            collector = eventStream,
             aiService = mockAIService
         )
         
         backgroundScope.launch {
-            InternalDomainEventStream.events
+            eventStream
                 .filterIsInstance<HarvestComplete>()
                 .collect { categorizer.onEvent(it) }
         }
 
         // Emit harvest complete event
-        InternalDomainEventStream.emit(
+        eventStream.emit(
             HarvestComplete(storyId = storyId, cleanText = cleanText, errorText = "", exitCode = 0)
         )
 
-        val categorizedEvents = InternalDomainEventStream.events
+        val categorizedEvents = eventStream
             .filterIsInstance<StoryCategorized>()
             .take(1)
             .toList()
@@ -110,23 +108,24 @@ class CategorizerTest {
             mockResult = AIResult(mockAiResponse, "", 0)
         }
 
+        val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
         val categorizer = Categorizer(
-            emit = { event -> InternalDomainEventStream.emit(event) },
+            collector = eventStream,
             aiService = mockAIService
         )
         
         backgroundScope.launch {
-            InternalDomainEventStream.events
+            eventStream
                 .filterIsInstance<HarvestComplete>()
                 .collect { categorizer.onEvent(it) }
         }
 
         // Emit harvest complete event
-        InternalDomainEventStream.emit(
+        eventStream.emit(
             HarvestComplete(storyId = storyId, cleanText = cleanText, errorText = "", exitCode = 0)
         )
 
-        val categorizedEvents = InternalDomainEventStream.events
+        val categorizedEvents = eventStream
             .filterIsInstance<StoryCategorized>()
             .take(1)
             .toList()
@@ -146,23 +145,24 @@ class CategorizerTest {
             mockResult = AIResult(mockAiResponse, "", 0)
         }
 
+        val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
         val categorizer = Categorizer(
-            emit = { event -> InternalDomainEventStream.emit(event) },
+            collector = eventStream,
             aiService = mockAIService
         )
         
         backgroundScope.launch {
-            InternalDomainEventStream.events
+            eventStream
                 .filterIsInstance<HarvestComplete>()
                 .collect { categorizer.onEvent(it) }
         }
 
         // Emit harvest complete event
-        InternalDomainEventStream.emit(
+        eventStream.emit(
             HarvestComplete(storyId = storyId, cleanText = cleanText, errorText = "", exitCode = 0)
         )
 
-        val categorizedEvents = InternalDomainEventStream.events
+        val categorizedEvents = eventStream
             .filterIsInstance<StoryCategorized>()
             .take(1)
             .toList()
