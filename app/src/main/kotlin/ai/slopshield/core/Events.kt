@@ -156,6 +156,13 @@ data class StoryCategorized(
 }
 
 /**
+ * Triggered when a component needs the personal context for AI analysis.
+ */
+data class ContextRequest(
+    override val timestamp: Instant = Instant.now()
+) : SlopEvent
+
+/**
  * Triggered by the Memory domain in response to a context request.
  */
 data class ContextResponse(

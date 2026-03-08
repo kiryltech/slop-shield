@@ -10,3 +10,5 @@ build
 # Ignore MapDB database files
 *.db
 *.db.*
+
+app/context/

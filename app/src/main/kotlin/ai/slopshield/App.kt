@@ -2,8 +2,8 @@ package ai.slopshield
 
 import ai.slopshield.core.AppContext
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
 import java.io.StringReader
 
@@ -17,7 +17,9 @@ class App {
             it.start()
             logger.info { "🛡️ SlopShield is active. Press Ctrl+C to stop." }
             // Keep the app running until the scope is cancelled
-            coroutineContext[Job]?.children?.toList()?.joinAll()
+            while (coroutineContext.isActive) {
+                delay(1000)
+            }
         }
 
     }

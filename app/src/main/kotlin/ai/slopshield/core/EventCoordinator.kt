@@ -31,22 +31,24 @@ class EventCoordinator(
         logger.info { "EventCoordinator: Scanning for components in $packageName..." }
 
         val reflections = Reflections(packageName)
+        val componentClasses = (reflections.getTypesAnnotatedWith(SlopListener::class.java) + 
+                               reflections.getTypesAnnotatedWith(SlopService::class.java)).distinct()
 
-        // 1. Discover Handlers (Listeners)
-        reflections.getTypesAnnotatedWith(SlopListener::class.java).forEach { clazz ->
-            if (shouldRegister(clazz) && SlopHandler::class.java.isAssignableFrom(clazz)) {
-                val handler = instantiate(clazz.kotlin) as SlopHandler<*>
-                handlers.add(handler)
-                logger.info { "EventCoordinator: Registered handler ${clazz.simpleName} for event ${handler.eventType.simpleName}" }
+        componentClasses.forEach { clazz ->
+            if (!shouldRegister(clazz)) return@forEach
+
+            val instance = instantiate(clazz.kotlin)
+
+            // Register as Handler if applicable
+            if (instance is SlopHandler<*> && clazz.isAnnotationPresent(SlopListener::class.java)) {
+                handlers.add(instance)
+                logger.info { "EventCoordinator: Registered handler ${clazz.simpleName} for event ${instance.eventType.simpleName}" }
             }
-        }
 
-        // 2. Discover Services (Producers/Servers)
-        reflections.getTypesAnnotatedWith(SlopService::class.java).forEach { clazz ->
-            if (shouldRegister(clazz) && SlopServiceLifecycle::class.java.isAssignableFrom(clazz)) {
-                val service = instantiate(clazz.kotlin) as SlopServiceLifecycle
-                services.add(service)
-                service.start()
+            // Register as Service if applicable
+            if (instance is SlopServiceLifecycle && clazz.isAnnotationPresent(SlopService::class.java)) {
+                services.add(instance)
+                instance.start()
                 logger.info { "EventCoordinator: Started service ${clazz.simpleName}" }
             }
         }
