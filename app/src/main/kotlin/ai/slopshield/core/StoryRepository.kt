@@ -19,6 +19,7 @@ data class Story(
     val url: String,
     val cleanText: String? = null,
     val category: StoryCategory? = null,
+    val categoryReasoning: String? = null,
     val analysis: AnalysisComplete? = null
 ) : Serializable
 

@@ -158,7 +158,7 @@ data class StoryCategorized(
     override val timestamp: Instant = Instant.now()
 ) : ProjectableEvent {
     override fun project(repository: StoryRepository) {
-        repository.update(storyId) { it.copy(category = category) }
+        repository.update(storyId) { it.copy(category = category, categoryReasoning = reasoning) }
     }
 }
 

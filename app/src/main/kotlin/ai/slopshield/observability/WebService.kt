@@ -76,9 +76,10 @@ class WebService(
                                         }
                                         +" | ID: ${story.id}"
                                     }
-                                    story.cleanText?.let {
+                                    val infoText = story.analysis?.sparringNote ?: story.categoryReasoning
+                                    infoText?.let {
                                         div("reasoning") {
-                                            +"Reasoning: ${story.analysis?.sparringNote ?: "No deep analysis yet."}"
+                                            +it
                                         }
                                     }
                                 }
