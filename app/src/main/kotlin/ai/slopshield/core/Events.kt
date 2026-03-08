@@ -25,7 +25,7 @@ class SystemPropertyCondition(
  * Specific condition for debug mode.
  */
 class DebugEnabledCondition : EnabledIf {
-    override fun isEnabled()= java.lang.Boolean.getBoolean("slopshield.debug")
+    override fun isEnabled() = java.lang.Boolean.getBoolean("slopshield.debug")
 }
 
 /**
@@ -69,7 +69,8 @@ interface SlopHandler<T : SlopEvent> {
      */
     @Suppress("UNCHECKED_CAST")
     val eventType: KClass<T>
-        get() = CachedTypeRegistry.get(this::class) as KClass<T>
+        get() = CachedTypeRegistry.get(this::class, SlopHandler::class)
+            .first() as KClass<T>
 
     /**
      * Optional filter to further refine which events are processed.
