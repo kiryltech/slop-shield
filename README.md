@@ -13,17 +13,16 @@ In an era of AI-generated filler, SlopShield helps you:
 
 ## 🧠 The Curator (AI Brain)
 
-At the heart of SlopShield is **The Curator**, an AI agent that scores content using the **SECV-S Rubric**:
-*   **(MMS) Mental Model Shift:** Does this change how I think?
-*   **(SA) Strategic Actionability:** Can I make a decision based on this today?
-*   **(SD) Signal Density:** Is it fluff-free?
-*   **(D) Durability:** Will this matter in 2 years?
-*   **(S) Serendipity:** Is it unexpectedly fascinating?
+At the heart of SlopShield is **The Curator**, an AI agent that scores content using the **SECV Rubric**:
+*   **(MMS) Mental Model Shift:** Does this change how you think?
+*   **(SA) Strategic Actionability:** Can you make a decision based on it?
+*   **(SD) Signal Density:** Is it "meat" or "fluff"?
+*   **(D) Durability:** Will it matter in 2 years?
 
 ## 🏗️ Architecture
 
 SlopShield is built as a **Modular Monolith** in Kotlin/JVM, featuring:
-*   **Internal Message Bus:** Using Kotlin Coroutines and Channels for reactive domain boundaries.
+*   **Domain Event Stream:** Using Kotlin Coroutines and Channels for reactive domain boundaries.
 *   **MapDB Persistence:** A zero-boilerplate, crash-consistent embedded NoSQL store.
 *   **Gemini CLI Integration:** Leverages local AI for deep analysis while maintaining privacy and efficiency.
 *   **High-Resolution Observability:** Detailed monitoring for every stage of the ingestion and analysis pipeline.

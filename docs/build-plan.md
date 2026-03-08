@@ -2,10 +2,10 @@
 
 This document outlines the incremental development phases for **Project SlopShield**.
 
-## Phase 1: Foundation & The Message Bus
+## Phase 1: Foundation & The Domain Event Stream
 **Goal:** Establish the "Modular Monolith" architecture using Kotlin Coroutines and Channels.
 - [ ] Define internal `Event` types: `StoryDiscovered`, `HarvestComplete`, `ContextResponse`, `AnalysisComplete`.
-- [ ] Implement the `InternalBus` using Kotlin `Channels` for non-blocking communication.
+- [ ] Implement the `InternalDomainEventStream` using Kotlin `Channels` for non-blocking communication.
 - [ ] Scaffold the domain packages: `scout`, `harvester`, `memory`, `strategist`, `observability`.
 
 ## Phase 2: The Scout & The Harvester

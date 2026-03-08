@@ -16,7 +16,7 @@ The internal intelligence driving the analysis is known as **The Curator**.
 ## **2. TECHNICAL STACK & CONSTRAINTS**
 
 *   **Platform:** **Kotlin (JVM)**. Chosen for robust multi-threading and type-safe service boundaries.
-*   **Concurrency:** Kotlin **Coroutines** & **Channels** (simulating the internal Message Bus).
+*   **Concurrency:** Kotlin **Coroutines** & **Channels** (simulating the internal Domain Event Stream).
 *   **AI Engine:** **The Curator** (a Gemini CLI Wrapper). The system executes local Gemini CLI sessions to perform deep analysis while maintaining local auth and cost efficiency.
 *   **Memory Strategy:** **Full-Context Injection**. The "Memory" module aggregates the entire local corpus into the LLM context window for V1.
 *   **Persistence:** **MapDB** (Embedded NoSQL).
@@ -34,7 +34,7 @@ The internal intelligence driving the analysis is known as **The Curator**.
 
 ### **A. The Scout (Ingestion Domain)**
 *   **Responsibility:** Periodically polls the [HN Firebase API](https://github.com/HackerNews/API).
-*   **Behavior:** Publishes a `StoryDiscovered` event to the internal Bus.
+*   **Behavior:** Publishes a `StoryDiscovered` event to the internal Domain Event Stream.
 
 ### **B. The Harvester (Scraping Domain)**
 *   **Responsibility:** Extracts clean text from external URLs.
@@ -63,7 +63,7 @@ The internal intelligence driving the analysis is known as **The Curator**.
 
 ---
 
-## **4. THE BUS PROTOCOL (INTERNAL EVENTS)**
+## **4. THE DOMAIN EVENT STREAM (INTERNAL EVENTS)**
 
 | Event | Producer | Description |
 | :--- | :--- | :--- |
@@ -76,7 +76,7 @@ The internal intelligence driving the analysis is known as **The Curator**.
 
 ## **5. EARLY CONCEPT: SAMPLE OUTPUT**
 
-**HN Story:** *"Why the Message Bus is a Cognitive Burden"*
+**HN Story:** *"Why the Domain Event Stream is a Cognitive Burden"*
 **URL:** `https://example.com/anti-kafka-rant`
 
 **The Curator's Assessment:**
@@ -86,7 +86,7 @@ The internal intelligence driving the analysis is known as **The Curator**.
 *   **Hype Risk:** Low (Original argument, no buzzwords).
 
 **Sparring Note:**
-*"This article directly challenges your SlopShield architecture. It argues that internal message buses lead to 'Event Spaghetti' and hidden state mutations. While it reinforces your skepticism of Kafka, it suggests your 'Satirical Bus' might be the very thing you're mocking. **Must read to avoid building a trap.**"*
+*"This article directly challenges your SlopShield architecture. It argues that internal event streams lead to 'Event Spaghetti' and hidden state mutations. While it reinforces your skepticism of Kafka, it suggests your 'Satirical Stream' might be the very thing you're mocking. **Must read to avoid building a trap.**"*
 
 ---
 
@@ -96,6 +96,6 @@ The internal intelligence driving the analysis is known as **The Curator**.
 *   [ ] **Harvester** integration via Gemini CLI.
 *   [ ] **Memory** service reading local markdown files.
 *   [ ] **Strategist (The Curator)** service wrapping `gemini` CLI calls.
-*   [ ] **Internal Bus** implemented using Kotlin `Channels`.
+*   [ ] **Internal Domain Event Stream** implemented using Kotlin `Channels`.
 *   [ ] Minimalist **Web UI** showing the **Signal** and the **Noise Bin**.
 *   [ ] **Zero instances of Kafka or Kubernetes.**
