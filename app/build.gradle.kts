@@ -37,6 +37,9 @@ dependencies {
     implementation(libs.kotlin.logging)
     implementation(libs.logback.classic)
 
+    // Storage
+    implementation(libs.mapdb)
+
     // Testing
     testImplementation(libs.ktor.client.mock)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")

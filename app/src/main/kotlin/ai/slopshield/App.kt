@@ -2,6 +2,8 @@ package ai.slopshield
 
 import ai.slopshield.core.InternalDomainEventStream
 import ai.slopshield.core.AIService
+import ai.slopshield.core.StoryRepository
+import ai.slopshield.core.StoryProjector
 import ai.slopshield.harvester.Harvester
 import ai.slopshield.scout.Scout
 import ai.slopshield.strategist.Categorizer
@@ -29,17 +31,27 @@ class App {
             }
         }
         
+        // Infrastructure
+        val repository = StoryRepository()
+        val aiService = AIService()
+        
         // Use a SupervisorJob to ensure failure in one domain doesn't cancel others
         val supervisor = SupervisorJob()
         val appScope = CoroutineScope(coroutineContext + supervisor)
 
-        val aiService = AIService()
-        val scout = Scout(appScope, httpClient, InternalDomainEventStream, pollInterval = Duration.ofMinutes(15))
+        // Core / State Projection
+        val projector = StoryProjector(appScope, InternalDomainEventStream, repository)
+        
+        // Domains
+        val scout = Scout(appScope, httpClient, InternalDomainEventStream)
         val harvester = Harvester(appScope, httpClient, InternalDomainEventStream, aiService)
         val categorizer = Categorizer(appScope, InternalDomainEventStream, aiService)
+        
+        // Observability
         val dumper = HarvestDumper(appScope, InternalDomainEventStream)
 
         logger.info { "🛡️ Starting Domain Services..." }
+        projector.start()
         dumper.start()
         harvester.start()
         categorizer.start()
@@ -52,6 +64,7 @@ class App {
         
         // Cleanup
         aiService.shutdown()
+        repository.close()
     }
 }
 

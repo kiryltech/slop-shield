@@ -13,6 +13,16 @@ sealed interface SlopEvent {
 }
 
 /**
+ * An event that knows how to project itself into the [StoryRepository].
+ */
+interface ProjectableEvent : SlopEvent {
+    /**
+     * Projects the event's data into the repository.
+     */
+    fun project(repository: StoryRepository)
+}
+
+/**
  * Triggered by the Scout when a new story is identified from an external source (e.g., Hacker News).
  *
  * @property id The unique identifier from the source system.
@@ -24,7 +34,11 @@ data class StoryDiscovered(
     val title: String,
     val url: String,
     override val timestamp: Instant = Instant.now()
-) : SlopEvent
+) : ProjectableEvent {
+    override fun project(repository: StoryRepository) {
+        repository.upsert(Story(id = id, title = title, url = url))
+    }
+}
 
 /**
  * Triggered by the Harvester after successfully extracting and cleaning text from a story's URL.
@@ -40,7 +54,13 @@ data class HarvestComplete(
     val errorText: String,
     val exitCode: Int,
     override val timestamp: Instant = Instant.now()
-) : SlopEvent
+) : ProjectableEvent {
+    override fun project(repository: StoryRepository) {
+        if (exitCode == 0) {
+            repository.update(storyId) { it.copy(cleanText = cleanText) }
+        }
+    }
+}
 
 /**
  * Categories for the identified content type.
@@ -70,7 +90,11 @@ data class StoryCategorized(
     val category: StoryCategory,
     val reasoning: String,
     override val timestamp: Instant = Instant.now()
-) : SlopEvent
+) : ProjectableEvent {
+    override fun project(repository: StoryRepository) {
+        repository.update(storyId) { it.copy(category = category) }
+    }
+}
 
 /**
  * Triggered by the Memory domain in response to a context request.
@@ -127,9 +151,13 @@ data class AnalysisComplete(
     val hypeRisk: HypeRisk,
     val sparringNote: String,
     override val timestamp: Instant = Instant.now()
-) : SlopEvent {
+) : ProjectableEvent {
     /**
      * The weighted average score derived from the SECV rubric.
      */
     val totalScore: Double get() = (mms + sa + sd + d) / 4.0
+
+    override fun project(repository: StoryRepository) {
+        repository.update(storyId) { it.copy(analysis = this) }
+    }
 }
