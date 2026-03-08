@@ -39,7 +39,7 @@ class WebService(
         server = embeddedServer(Netty, port = port) {
             routing {
                 get("/") {
-                    val stories = repository.getAll().sortedByDescending { it.id }
+                    val stories = repository.getAll().sortedByDescending { it.id }.toList()
                     call.respondHtml {
                         head {
                             title("SlopShield Dashboard")

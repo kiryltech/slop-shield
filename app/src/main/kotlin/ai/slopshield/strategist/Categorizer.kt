@@ -83,10 +83,7 @@ class Categorizer(
     }
 
     private fun sanitizeJson(input: String): String {
-        return input.trim()
-            .removePrefix("```json")
-            .removePrefix("```")
-            .removeSuffix("```")
-            .trim()
+        val jsonRegex = """(?s)\{.*\}""".toRegex()
+        return jsonRegex.find(input)?.value ?: input
     }
 }

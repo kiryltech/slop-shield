@@ -65,19 +65,11 @@ interface SlopServiceLifecycle {
 interface SlopHandler<T : SlopEvent> {
     /**
      * The type of event this handler is interested in.
-     * Derived at runtime from the generic type parameter.
+     * Derived at runtime from the generic type parameter and cached.
      */
     @Suppress("UNCHECKED_CAST")
     val eventType: KClass<T>
-        get() {
-            // Find the SlopHandler interface in the hierarchy
-            val type = this::class.java.genericInterfaces
-                .filterIsInstance<ParameterizedType>()
-                .first { it.rawType == SlopHandler::class.java }
-                .actualTypeArguments[0]
-            
-            return (type as Class<T>).kotlin
-        }
+        get() = CachedTypeRegistry.get(this::class) as KClass<T>
 
     /**
      * Optional filter to further refine which events are processed.

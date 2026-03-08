@@ -1,9 +1,7 @@
 package ai.slopshield.core
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
@@ -51,30 +49,48 @@ open class AIService(
             .redirectErrorStream(false)
             .start()
 
-        // Write input to process stdin
-        process.outputStream.bufferedWriter().use { it.write(input) }
-
-        try {
-            val finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
-            
-            val stdout = process.inputStream.bufferedReader().use { it.readText() }.trim()
-            val stderr = process.errorStream.bufferedReader().use { it.readText() }.trim()
-            
-            if (!finished) {
-                logger.error { "AIService: Gemini process timed out for prompt: ${prompt.take(50)}..." }
-                process.destroyForcibly()
-                AIResult(stdout, stderr, -1)
-            } else {
-                AIResult(stdout, stderr, process.exitValue())
+        coroutineScope {
+            // Start reading stdout and stderr concurrently to prevent deadlock
+            val stdoutDeferred = async(Dispatchers.IO) {
+                process.inputStream.bufferedReader().use { it.readText() }.trim()
             }
-        } catch (e: Exception) {
-            logger.error(e) { "AIService: Exception during Gemini execution" }
-            process.destroyForcibly()
-            AIResult("", e.message ?: "Unknown error", -1)
-        } finally {
-            process.inputStream.close()
-            process.errorStream.close()
-            process.outputStream.close()
+            val stderrDeferred = async(Dispatchers.IO) {
+                process.errorStream.bufferedReader().use { it.readText() }.trim()
+            }
+
+            // Write input to process stdin
+            launch(Dispatchers.IO) {
+                try {
+                    process.outputStream.bufferedWriter().use { it.write(input) }
+                } catch (e: Exception) {
+                    logger.warn { "AIService: Failed to write to process stdin: ${e.message}" }
+                }
+            }
+
+            try {
+                val finished = withContext(Dispatchers.IO) {
+                    process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
+                }
+
+                val stdout = stdoutDeferred.await()
+                val stderr = stderrDeferred.await()
+
+                if (!finished) {
+                    logger.error { "AIService: Gemini process timed out for prompt: ${prompt.take(50)}..." }
+                    process.destroyForcibly()
+                    AIResult(stdout, stderr, -1)
+                } else {
+                    AIResult(stdout, stderr, process.exitValue())
+                }
+            } catch (e: Exception) {
+                logger.error(e) { "AIService: Exception during Gemini execution" }
+                process.destroyForcibly()
+                AIResult("", e.message ?: "Unknown error", -1)
+            } finally {
+                process.inputStream.close()
+                process.errorStream.close()
+                process.outputStream.close()
+            }
         }
     }
 

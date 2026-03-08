@@ -84,7 +84,9 @@ class EventCoordinator(
             ?: return true
 
         return try {
-            val enabled = enabledAnnotation.condition.createInstance().isEnabled()
+            val conditionClass = enabledAnnotation.condition.java
+            val condition = conditionClass.getDeclaredConstructor().newInstance()
+            val enabled = condition.isEnabled()
 
             if (!enabled) {
                 logger.debug { "EventCoordinator: Skipping ${clazz.simpleName} because condition ${enabledAnnotation.condition.simpleName} was not met." }

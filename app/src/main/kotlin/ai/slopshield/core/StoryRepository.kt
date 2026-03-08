@@ -50,7 +50,6 @@ class StoryRepository(
             db.commit()
             logger.debug { "StoryRepository: Upserted story ${story.id}" }
         } catch (e: Exception) {
-            db.rollback()
             logger.error(e) { "StoryRepository: Failed to upsert story ${story.id}" }
         }
     }
@@ -70,15 +69,14 @@ class StoryRepository(
                 logger.warn { "StoryRepository: Attempted to update non-existent story $id" }
             }
         } catch (e: Exception) {
-            db.rollback()
             logger.error(e) { "StoryRepository: Failed to update story $id" }
         }
     }
 
     /**
-     * Returns all stories.
+     * Returns all stories as a Sequence for scalability.
      */
-    fun getAll(): List<Story> = stories.values.toList()
+    fun getAll(): Sequence<Story> = stories.values.asSequence()
 
     fun close() {
         db.close()
