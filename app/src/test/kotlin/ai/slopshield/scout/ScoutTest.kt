@@ -2,21 +2,25 @@ package ai.slopshield.scout
 
 import ai.slopshield.core.SlopEvent
 import ai.slopshield.core.StoryDiscovered
-import io.ktor.client.*
-import io.ktor.client.engine.mock.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
+import ai.slopshield.core.StoryRepository
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.respondError
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import org.mapdb.DBMaker
 import java.time.Duration
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -35,6 +39,7 @@ class ScoutTest {
                         headers = headersOf(HttpHeaders.ContentType, "application/json")
                     )
                 }
+
                 "/v0/item/1.json" -> {
                     respond(
                         content = """{"id": 1, "title": "Story 1", "url": "http://example.com/1", "type": "story"}""",
@@ -42,6 +47,7 @@ class ScoutTest {
                         headers = headersOf(HttpHeaders.ContentType, "application/json")
                     )
                 }
+
                 "/v0/item/2.json" -> {
                     respond(
                         content = """{"id": 2, "title": "Story 2", "url": "http://example.com/2", "type": "story"}""",
@@ -49,6 +55,7 @@ class ScoutTest {
                         headers = headersOf(HttpHeaders.ContentType, "application/json")
                     )
                 }
+
                 else -> respondError(HttpStatusCode.NotFound)
             }
         }
@@ -59,12 +66,19 @@ class ScoutTest {
             }
         }
 
+        val repository = StoryRepository(
+            DBMaker
+                .memoryDB()
+                .transactionEnable()
+                .make()
+        )
+
         val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
-        val scout = Scout(this, httpClient, eventStream, pollInterval = Duration.ofMinutes(15), limit = 2)
-        
+        val scout = Scout(this, httpClient, eventStream, repository, pollInterval = Duration.ofMinutes(15), limit = 2)
+
         // Directly trigger polling
         scout.pollTopStories()
-        
+
         val discoveredEvents = eventStream
             .filterIsInstance<StoryDiscovered>()
             .take(2)
@@ -73,5 +87,7 @@ class ScoutTest {
         assertEquals(2, discoveredEvents.size, "Should have discovered 2 stories")
         assertEquals("Story 1", discoveredEvents[0].title)
         assertEquals("Story 2", discoveredEvents[1].title)
+
+        repository.close()
     }
 }

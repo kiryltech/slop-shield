@@ -2,7 +2,6 @@ package ai.slopshield.core
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.mapdb.DB
-import org.mapdb.DBMaker
 import org.mapdb.Serializer
 import org.mapdb.serializer.GroupSerializer
 import java.io.Serializable
@@ -27,13 +26,8 @@ data class Story(
  * Repository for managing persistent storage of stories using MapDB.
  */
 class StoryRepository(
-    dbFilePath: String = System.getProperty("slopshield.db.path", "slopshield.db")
+    private val db: DB
 ) {
-    private val db: DB = DBMaker
-        .fileDB(dbFilePath)
-        .transactionEnable()
-        .closeOnJvmShutdown()
-        .make()
 
     // Persistent Map for stories
     private val stories: ConcurrentMap<String, Story> = db
