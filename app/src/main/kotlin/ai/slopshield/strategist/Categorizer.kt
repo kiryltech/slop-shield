@@ -37,6 +37,7 @@ class Categorizer(
         - PRODUCT: SaaS landing pages, commercial products, tools for sale, marketing materials.
         - DEMO: Technical demos, interactive experiments, "Show HN" style prototypes.
         - SOURCE: Source code repositories (e.g., GitHub, GitLab), library documentation, or code snippets.
+        - VIDEO: Video content platforms like YouTube, Vimeo, or technical talks.
         - UNKNOWN: Anything that doesn't fit the above.
 
         CRITICAL: Output ONLY a raw JSON object. Do not wrap it in markdown code blocks.

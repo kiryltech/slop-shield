@@ -104,7 +104,7 @@ class Strategist(
     }
 
     private fun shouldAnalyze(event: StoryCategorized): Boolean {
-        return event.category == StoryCategory.WRITING || event.category == StoryCategory.DEMO
+        return event.category == StoryCategory.WRITING || event.category == StoryCategory.DEMO || event.category == StoryCategory.VIDEO
     }
 
     private suspend fun analyze(event: StoryCategorized) {

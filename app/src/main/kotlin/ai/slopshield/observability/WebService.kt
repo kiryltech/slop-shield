@@ -51,6 +51,7 @@ class WebService(
                                     .story-card.writing { border-left-color: #2ecc71; }
                                     .story-card.demo { border-left-color: #9b59b6; }
                                     .story-card.product { border-left-color: #e67e22; }
+                                    .story-card.video { border-left-color: #e74c3c; }
                                     .story-title { font-size: 1.2em; font-weight: bold; color: #0066cc; text-decoration: none; }
                                     .story-title:hover { text-decoration: underline; }
                                     .meta { font-size: 0.9em; color: #666; margin-top: 5px; }
@@ -59,6 +60,7 @@ class WebService(
                                     .badge.product { background: #f1f8e9; color: #1b5e20; }
                                     .badge.demo { background: #fff3e0; color: #e65100; }
                                     .badge.source { background: #f3e5f5; color: #4a148c; }
+                                    .badge.video { background: #ffebee; color: #c62828; }
                                     .badge.unknown { background: #eeeeee; color: #424242; }
                                     
                                     .analysis-box { margin-top: 15px; padding: 10px; background: #fafafa; border: 1px solid #eee; border-radius: 4px; }

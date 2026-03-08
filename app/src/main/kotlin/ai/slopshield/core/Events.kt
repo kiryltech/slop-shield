@@ -138,7 +138,7 @@ data class HarvestComplete(
  * Categories for the identified content type.
  */
 enum class StoryCategory {
-    WRITING, PRODUCT, DEMO, SOURCE, UNKNOWN
+    WRITING, PRODUCT, DEMO, SOURCE, VIDEO, UNKNOWN
 }
 
 /**
