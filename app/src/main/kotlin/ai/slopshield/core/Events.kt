@@ -43,6 +43,36 @@ data class HarvestComplete(
 ) : SlopEvent
 
 /**
+ * Categories for the identified content type.
+ */
+enum class StoryCategory {
+    /** Articles, blog posts, essays, news stories. */
+    WRITING,
+    /** SaaS landing pages, commercial products, tools for sale, marketing materials. */
+    PRODUCT,
+    /** Technical demos, interactive experiments, "Show HN" style prototypes. */
+    DEMO,
+    /** Source code repositories (e.g., GitHub, GitLab). */
+    SOURCE,
+    /** Content that doesn't fit the above categories. */
+    UNKNOWN
+}
+
+/**
+ * Triggered by the Strategist after identifying the type of content.
+ *
+ * @property storyId References the original [StoryDiscovered.id].
+ * @property category The identified type of content.
+ * @property reasoning The AI's explanation for this categorization.
+ */
+data class StoryCategorized(
+    val storyId: String,
+    val category: StoryCategory,
+    val reasoning: String,
+    override val timestamp: Instant = Instant.now()
+) : SlopEvent
+
+/**
  * Triggered by the Memory domain in response to a context request.
  * Contains the aggregated personal "Source of Truth" for The Curator.
  *
@@ -53,12 +83,21 @@ data class ContextResponse(
     override val timestamp: Instant = Instant.now()
 ) : SlopEvent
 
+/**
+ * How the story aligns with the user's body of work.
+ */
 enum class Alignment {
+    /** Reinforces what you already know/believe. */
     ECHO_CHAMBER,
+    /** Challenges your existing views or provides a different perspective. */
     OPPOSITE_VIEW,
+    /** Adds new information that fits well with your current knowledge. */
     COMPLEMENTARY
 }
 
+/**
+ * The detected level of hype or "slop" in the content.
+ */
 enum class HypeRisk {
     LOW,
     MEDIUM,

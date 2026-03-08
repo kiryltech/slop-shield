@@ -34,7 +34,7 @@ class Scout(
     private val client: HttpClient,
     private val eventStream: DomainEventStream,
     private val pollInterval: Duration = Duration.ofMinutes(15),
-    private val limit: Int = 30
+    private val limit: Int = Integer.getInteger("slopshield.ai.scout.limit", 30)
 ) {
     private val discoveredIds = Collections.synchronizedSet(object : LinkedHashSet<Long>() {
         private val MAX_ENTRIES = 1000

@@ -20,11 +20,18 @@ data class AIResult(
 
 /**
  * Generic AI execution engine - a shared wrapper for the Gemini CLI.
- * It manages a fixed thread pool to throttle AI processing throughput.
+ *
+ * It manages a fixed thread pool to throttle AI processing throughput,
+ * ensuring that multiple domain services don't overwhelm the system with 
+ * parallel AI calls.
+ *
+ * @param maxParallelTasks The maximum number of concurrent Gemini CLI processes allowed.
+ * Defaults to the 'slopshield.ai.parallelism' system property or 3.
  */
 open class AIService(
-    maxParallelTasks: Int = Integer.getInteger("slopshield.ai.parallelism", 3)
+    maxParallelTasks: Int = System.getProperty("slopshield.ai.parallelism", "3").toInt()
 ) {
+
     private val executor = Executors.newFixedThreadPool(maxParallelTasks)
     private val dispatcher: CoroutineDispatcher = executor.asCoroutineDispatcher()
 
