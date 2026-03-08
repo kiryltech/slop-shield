@@ -3,6 +3,7 @@ package ai.slopshield
 import ai.slopshield.core.InternalDomainEventStream
 import ai.slopshield.harvester.Harvester
 import ai.slopshield.scout.Scout
+import ai.slopshield.observability.HarvestDumper
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -32,8 +33,10 @@ class App {
 
         val scout = Scout(appScope, httpClient, InternalDomainEventStream, pollInterval = Duration.ofMinutes(15))
         val harvester = Harvester(appScope, InternalDomainEventStream)
+        val dumper = HarvestDumper(appScope, InternalDomainEventStream)
 
-        logger.info { "🛡️ Starting the Scout and Harvester..." }
+        logger.info { "🛡️ Starting Domain Services..." }
+        dumper.start()
         harvester.start()
         scout.start()
 
