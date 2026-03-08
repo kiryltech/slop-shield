@@ -39,9 +39,12 @@ class HarvestDumper(
 
     private fun dump(event: HarvestComplete) {
         try {
-            val file = File(dumpDir, "${event.storyId}.md")
-            file.writeText(event.cleanText)
-            logger.debug { "HarvestDumper: Dumped story ${event.storyId} to ${file.absolutePath}" }
+            val baseFile = File(dumpDir, event.storyId)
+            File("${baseFile.absolutePath}.stdout.md").writeText(event.cleanText)
+            if (event.errorText.isNotBlank()) {
+                File("${baseFile.absolutePath}.stderr.log").writeText(event.errorText)
+            }
+            logger.debug { "HarvestDumper: Dumped story ${event.storyId} (exit: ${event.exitCode}) to ${dumpDir.absolutePath}" }
         } catch (e: Exception) {
             logger.error(e) { "HarvestDumper: Failed to dump story ${event.storyId}" }
         }

@@ -31,10 +31,14 @@ data class StoryDiscovered(
  *
  * @property storyId References the original [StoryDiscovered.id].
  * @property cleanText The raw, fluff-free text ready for AI analysis.
+ * @property errorText The error output from the scraper (if any).
+ * @property exitCode The exit code of the scraper process.
  */
 data class HarvestComplete(
     val storyId: String,
     val cleanText: String,
+    val errorText: String,
+    val exitCode: Int,
     override val timestamp: Instant = Instant.now()
 ) : SlopEvent
 

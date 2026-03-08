@@ -32,7 +32,7 @@ class App {
         val appScope = CoroutineScope(coroutineContext + supervisor)
 
         val scout = Scout(appScope, httpClient, InternalDomainEventStream, pollInterval = Duration.ofMinutes(15))
-        val harvester = Harvester(appScope, InternalDomainEventStream)
+        val harvester = Harvester(appScope, httpClient, InternalDomainEventStream)
         val dumper = HarvestDumper(appScope, InternalDomainEventStream)
 
         logger.info { "🛡️ Starting Domain Services..." }
