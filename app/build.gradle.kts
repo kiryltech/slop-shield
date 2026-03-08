@@ -43,5 +43,5 @@ java {
 
 application {
     // Define the main class for the application.
-    mainClass.set("com.slopshield.AppKt")
+    mainClass.set("ai.slopshield.AppKt")
 }
