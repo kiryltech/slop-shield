@@ -1,5 +1,6 @@
 package ai.slopshield
 
+import ai.slopshield.core.AIService
 import ai.slopshield.core.InternalDomainEventStream
 import ai.slopshield.harvester.Harvester
 import ai.slopshield.scout.Scout
@@ -31,8 +32,9 @@ class App {
         val supervisor = SupervisorJob()
         val appScope = CoroutineScope(coroutineContext + supervisor)
 
+        val aiService = AIService()
         val scout = Scout(appScope, httpClient, InternalDomainEventStream, pollInterval = Duration.ofMinutes(15))
-        val harvester = Harvester(appScope, httpClient, InternalDomainEventStream)
+        val harvester = Harvester(appScope, httpClient, InternalDomainEventStream, aiService)
         val dumper = HarvestDumper(appScope, InternalDomainEventStream)
 
         logger.info { "🛡️ Starting Domain Services..." }
@@ -44,6 +46,9 @@ class App {
         
         // Wait for the supervisor job children to complete
         supervisor.children.toList().joinAll()
+        
+        // Cleanup
+        aiService.shutdown()
     }
 }
 

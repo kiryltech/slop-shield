@@ -1,0 +1,80 @@
+package ai.slopshield.core
+
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.withContext
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+
+private val logger = KotlinLogging.logger {}
+
+/**
+ * Result of an AI processing task.
+ */
+data class AIResult(
+    val stdout: String,
+    val stderr: String,
+    val exitCode: Int
+)
+
+/**
+ * Generic AI execution engine - a shared wrapper for the Gemini CLI.
+ * It manages a fixed thread pool to throttle AI processing throughput.
+ */
+open class AIService(
+    maxParallelTasks: Int = Integer.getInteger("slopshield.ai.parallelism", 3)
+) {
+    private val executor = Executors.newFixedThreadPool(maxParallelTasks)
+    private val dispatcher: CoroutineDispatcher = executor.asCoroutineDispatcher()
+
+    /**
+     * Executes a Gemini CLI command with the given prompt and input content.
+     *
+     * @param prompt The prompt to pass as the first argument to gemini.
+     * @param input The content to pipe into gemini's stdin.
+     * @param timeoutSeconds How long to wait for the process to complete.
+     */
+    open suspend fun process(
+        prompt: String,
+        input: String,
+        timeoutSeconds: Long = 120
+    ): AIResult = withContext(dispatcher) {
+        val process = ProcessBuilder("gemini", prompt, "-e", "")
+            .redirectErrorStream(false)
+            .start()
+
+        // Write input to process stdin
+        process.outputStream.bufferedWriter().use { it.write(input) }
+
+        try {
+            val finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
+            
+            val stdout = process.inputStream.bufferedReader().use { it.readText() }.trim()
+            val stderr = process.errorStream.bufferedReader().use { it.readText() }.trim()
+            
+            if (!finished) {
+                logger.error { "AIService: Gemini process timed out for prompt: ${prompt.take(50)}..." }
+                process.destroyForcibly()
+                AIResult(stdout, stderr, -1)
+            } else {
+                AIResult(stdout, stderr, process.exitValue())
+            }
+        } catch (e: Exception) {
+            logger.error(e) { "AIService: Exception during Gemini execution" }
+            process.destroyForcibly()
+            AIResult("", e.message ?: "Unknown error", -1)
+        } finally {
+            process.inputStream.close()
+            process.errorStream.close()
+            process.outputStream.close()
+        }
+    }
+
+    fun shutdown() {
+        executor.shutdown()
+        if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+            executor.shutdownNow()
+        }
+    }
+}
