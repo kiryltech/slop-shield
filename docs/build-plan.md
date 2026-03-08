@@ -33,7 +33,7 @@ This document outlines the incremental development phases for **Project SlopShie
 
 ## Phase 5: Persistence & Observability
 **Goal:** Stop "losing" state and start monitoring.
-- [ ] Set up **MapDB** with `transactionEnable()` and `BTreeMap` for sorted story indexing.
+- [x] Set up **MapDB** with `transactionEnable()` and `BTreeMap` for sorted story indexing.
 - [x] Implement **StoryProjector** for centralized state management.
 - [x] Track pipeline state through **ProjectableEvent** pattern.
 - [ ] Implement basic logging/metrics for the "Satirical Observability" domain.
