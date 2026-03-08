@@ -21,6 +21,7 @@ The internal intelligence driving the analysis is known as **The Curator**.
 *   **Memory Strategy:** **Full-Context Injection**. The "Memory" module aggregates the entire local corpus into the LLM context window for V1.
 *   **Persistence:** **MapDB** (Embedded NoSQL).
     *   *Why MapDB?* Provides a "zero-boilerplate" experience by persisting standard Kotlin Maps to disk.
+    *   *Implementation:* Uses `BTreeMap` (implementing `NavigableMap`) for sorted indexing of stories and events.
     *   *Reliability:* Configured with Write-Ahead Logging (WAL) and ACID transactions to ensure data consistency even during abnormal shutdowns.
     *   *Alternatives Considered:*
         *   **SQLite:** Traditional, but requires SQL mapping/migrations.
@@ -35,24 +36,29 @@ The internal intelligence driving the analysis is known as **The Curator**.
 *   **Responsibility:** Periodically polls the [HN Firebase API](https://github.com/HackerNews/API).
 *   **Behavior:** Publishes a `StoryDiscovered` event to the internal Bus.
 
-### **B. The Memory (Contextual Domain)**
+### **B. The Harvester (Scraping Domain)**
+*   **Responsibility:** Extracts clean text from external URLs.
+*   **Behavior:** Initially delegates scraping to **The Curator** (Gemini CLI) for rapid prototyping, with future plans for a deterministic, headless-browser-based "Harvester" service.
+
+### **C. The Memory (Contextual Domain)**
 *   **Responsibility:** Aggregates local `.md` drafts and Medium RSS content.
 *   **Behavior:** Provides the "Context Bundle" for **The Curator**.
 
-### **C. The Strategist (Analysis Domain - "The Curator")**
+### **D. The Strategist (Analysis Domain - "The Curator")**
 *   **Responsibility:** Orchestrates the AI pipeline.
-*   **The SECV Scoring Rubric (1-10):**
+*   **The SECV-S Scoring Rubric (1-10):**
     *   **MMS (Mental Model Shift):** Does this change how I think, or just confirm what I know?
     *   **SA (Strategic Actionability):** Can I make a decision based on this today?
     *   **SD (Signal Density):** Is it "fluff-free"?
     *   **D (Durability):** Will this matter in 2 years?
+    *   **S (Serendipity):** Is it unexpectedly fascinating, even if "useless"?
 *   **Dual-Path Analysis:**
     1.  **Personal Alignment:** `Echo Chamber`, `Opposite View`, or `Complementary`.
     2.  **Hype Detection:** Identifies "Hype Surfers" vs. "Genuine Insight."
-*   **Sparring Output:** Generates a **"Why this matters to you"** note (e.g., challenges your "Kafka Cult" thesis).
+*   **Goal:** Surface **High-Signal Disagreement**. Opposite views with high scores are prioritized over Aligned views (which are labeled as "Echo Chambers").
 
-### **D. Observability (The Progress Domain)**
-*   **Responsibility:** Maintains a live state of the pipeline (`DISCOVERED` -> `SCRAPING` -> `ANALYZING`).
+### **E. Observability (The Progress Domain)**
+*   **Responsibility:** Maintains a live state of the pipeline (`DISCOVERED` -> `HARVESTING` -> `ANALYZING`).
 *   **Satire:** High-resolution monitoring for a low-volume stream.
 
 ---
@@ -62,15 +68,33 @@ The internal intelligence driving the analysis is known as **The Curator**.
 | Event | Producer | Description |
 | :--- | :--- | :--- |
 | `StoryDiscovered` | Scout | Contains story metadata and URL. |
+| `HarvestComplete` | Harvester | Contains extracted clean text. |
 | `ContextResponse` | Memory | Returns the aggregated text of your body of work. |
-| `AnalysisComplete` | Strategist | Contains SECV scores, Alignment labels, and **Hype/Noise Red Flags**. |
+| `AnalysisComplete` | Strategist | Contains SECV-S scores, Alignment labels, and **Hype/Noise Red Flags**. |
 
 ---
 
-## **5. V1 SCOPE (DEFINITION OF DONE)**
+## **5. EARLY CONCEPT: SAMPLE OUTPUT**
+
+**HN Story:** *"Why the Message Bus is a Cognitive Burden"*
+**URL:** `https://example.com/anti-kafka-rant`
+
+**The Curator's Assessment:**
+*   **SECV-S Score:** 8.5/10
+*   **MMS:** 9 | **SA:** 4 | **SD:** 8 | **D:** 7 | **S:** 9
+*   **Alignment:** **OPPOSITE VIEW** (High Contrast to your "Modular Monolith" thesis).
+*   **Hype Risk:** Low (Original argument, no buzzwords).
+
+**Sparring Note:**
+*"This article directly challenges your SlopShield architecture. It argues that internal message buses lead to 'Event Spaghetti' and hidden state mutations. While it reinforces your skepticism of Kafka, it suggests your 'Satirical Bus' might be the very thing you're mocking. **Must read to avoid building a trap.**"*
+
+---
+
+## **6. V1 SCOPE (DEFINITION OF DONE)**
 *   [ ] Kotlin/JVM project structure with clear package boundaries.
 *   [ ] **Scout** service polling top 30 HN stories.
-*   [ ] **Memory** service reading local markdown files and RSS.
+*   [ ] **Harvester** integration via Gemini CLI.
+*   [ ] **Memory** service reading local markdown files.
 *   [ ] **Strategist (The Curator)** service wrapping `gemini` CLI calls.
 *   [ ] **Internal Bus** implemented using Kotlin `Channels`.
 *   [ ] Minimalist **Web UI** showing the **Signal** and the **Noise Bin**.
