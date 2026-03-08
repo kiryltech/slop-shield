@@ -47,26 +47,42 @@ class WebService(
                                 +"""
                                     body { font-family: sans-serif; line-height: 1.6; max-width: 1000px; margin: 0 auto; padding: 20px; background: #f4f4f9; }
                                     h1 { color: #333; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
-                                    .story-card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+                                    .story-card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #ccc; }
+                                    .story-card.writing { border-left-color: #2ecc71; }
+                                    .story-card.demo { border-left-color: #9b59b6; }
+                                    .story-card.product { border-left-color: #e67e22; }
                                     .story-title { font-size: 1.2em; font-weight: bold; color: #0066cc; text-decoration: none; }
                                     .story-title:hover { text-decoration: underline; }
                                     .meta { font-size: 0.9em; color: #666; margin-top: 5px; }
                                     .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; text-transform: uppercase; margin-right: 5px; }
-                                    .writing { background: #e3f2fd; color: #0d47a1; }
-                                    .product { background: #f1f8e9; color: #1b5e20; }
-                                    .demo { background: #fff3e0; color: #e65100; }
-                                    .source { background: #f3e5f5; color: #4a148c; }
-                                    .unknown { background: #eeeeee; color: #424242; }
-                                    .reasoning { font-style: italic; font-size: 0.9em; color: #555; margin-top: 10px; border-left: 3px solid #ddd; padding-left: 10px; }
+                                    .badge.writing { background: #e3f2fd; color: #0d47a1; }
+                                    .badge.product { background: #f1f8e9; color: #1b5e20; }
+                                    .badge.demo { background: #fff3e0; color: #e65100; }
+                                    .badge.source { background: #f3e5f5; color: #4a148c; }
+                                    .badge.unknown { background: #eeeeee; color: #424242; }
+                                    
+                                    .analysis-box { margin-top: 15px; padding: 10px; background: #fafafa; border: 1px solid #eee; border-radius: 4px; }
+                                    .scores { display: flex; gap: 15px; margin-bottom: 8px; flex-wrap: wrap; }
+                                    .score-item { text-align: center; }
+                                    .score-val { font-weight: bold; display: block; font-size: 1.1em; }
+                                    .score-lbl { font-size: 0.7em; color: #888; text-transform: uppercase; }
+                                    .total-signal { color: #d35400; font-size: 1.3em; }
+                                    
+                                    .alignment { padding: 2px 8px; border-radius: 10px; font-size: 0.75em; font-weight: bold; }
+                                    .alignment.echo_chamber { background: #fff9c4; color: #f57f17; }
+                                    .alignment.opposite_view { background: #c8e6c9; color: #2e7d32; }
+                                    .alignment.complementary { background: #e1f5fe; color: #0277bd; }
+                                    
+                                    .sparring { margin-top: 10px; padding: 8px; background: #fff; border-left: 3px solid #3498db; font-size: 0.9em; line-height: 1.4; color: #444; }
                                 """
                             }
                         }
                         body {
                             h1 { +"🛡️ SlopShield Dashboard" }
-                            p { +"Total stories in database: ${stories.size}" }
+                            p { +"Total stories: ${stories.size}" }
                             
                             stories.forEach { story ->
-                                div("story-card") {
+                                div("story-card ${story.category?.name?.lowercase() ?: "unknown"}") {
                                     a(href = story.url, target = "_blank", classes = "story-title") {
                                         +story.title
                                     }
@@ -76,10 +92,31 @@ class WebService(
                                         }
                                         +" | ID: ${story.id}"
                                     }
-                                    val infoText = story.analysis?.sparringNote ?: story.categoryReasoning
-                                    infoText?.let {
-                                        div("reasoning") {
-                                            +it
+                                    
+                                    story.analysis?.let { analysis ->
+                                        div("analysis-box") {
+                                            div("scores") {
+                                                div("score-item") {
+                                                    span("score-val total-signal") { +"%.1f".format(analysis.totalScore) }
+                                                    span("score-lbl") { +"Signal" }
+                                                }
+                                                listOf("MMS" to analysis.mms, "SA" to analysis.sa, "SD" to analysis.sd, "D" to analysis.d).forEach { (label, value) ->
+                                                    div("score-item") {
+                                                        span("score-val") { +value.toString() }
+                                                        span("score-lbl") { +label }
+                                                    }
+                                                }
+                                                span("alignment ${analysis.alignment.name.lowercase()}") {
+                                                    +analysis.alignment.name.replace("_", " ")
+                                                }
+                                            }
+                                            div("sparring") {
+                                                +analysis.sparringNote
+                                            }
+                                        }
+                                    } ?: story.categoryReasoning?.let {
+                                        div("analysis-box") {
+                                            div("sparring") { +it }
                                         }
                                     }
                                 }
