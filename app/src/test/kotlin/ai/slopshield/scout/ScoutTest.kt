@@ -63,7 +63,7 @@ class ScoutTest {
             }
         }
 
-        val scout = Scout(this, httpClient, InternalDomainEventStream, pollInterval = Duration.ofMinutes(15), limit = 2)
+        val scout = Scout(this, httpClient, { event -> InternalDomainEventStream.emit(event) }, pollInterval = Duration.ofMinutes(15), limit = 2)
         
         // Directly trigger polling
         scout.pollTopStories()

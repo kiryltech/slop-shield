@@ -32,6 +32,7 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlin.reflect)
 
     // Logging
     implementation(libs.kotlin.logging)
@@ -39,6 +40,9 @@ dependencies {
 
     // Storage
     implementation(libs.mapdb)
+
+    // Reflection
+    implementation(libs.reflections)
 
     // Testing
     testImplementation(libs.ktor.client.mock)

@@ -6,9 +6,11 @@ guava = "32.1.2-jre"
 coroutines = "1.8.0"
 ktor = "2.3.8"
 kotlinx-serialization = "1.6.3"
+kotlin-reflect = "1.9.20"
 kotlin-logging = "6.0.3"
 logback = "1.4.14"
 mapdb = "3.0.10"
+reflections = "0.10.2"
 
 [libraries]
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
@@ -19,9 +21,11 @@ ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negoti
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin-reflect" }
 kotlin-logging = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlin-logging" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 mapdb = { module = "org.mapdb:mapdb", version.ref = "mapdb" }
+reflections = { module = "org.reflections:reflections", version.ref = "reflections" }
 
 [plugins]
 jvm = { id = "org.jetbrains.kotlin.jvm", version = "1.9.20" }

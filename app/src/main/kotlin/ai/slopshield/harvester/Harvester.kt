@@ -1,16 +1,16 @@
 package ai.slopshield.harvester
 
 import ai.slopshield.core.AIService
-import ai.slopshield.core.DomainEventStream
 import ai.slopshield.core.HarvestComplete
+import ai.slopshield.core.SlopEmitter
+import ai.slopshield.core.SlopHandler
+import ai.slopshield.core.SlopListener
 import ai.slopshield.core.StoryDiscovered
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.filterIsInstance
 import java.net.URI
 
 private val logger = KotlinLogging.logger {}
@@ -23,22 +23,15 @@ private const val scraperPrompt =
  * The Harvester domain service.
  * Fetches webpage content and pipes it into AIService for extraction.
  */
+@SlopListener
 class Harvester(
-    private val scope: CoroutineScope,
     private val httpClient: HttpClient,
-    private val eventStream: DomainEventStream,
+    private val emit: SlopEmitter,
     private val aiService: AIService
-) {
-    fun start() {
-        scope.launch {
-            eventStream.events
-                .filterIsInstance<StoryDiscovered>()
-                .collect { event ->
-                    // Launch each harvest in its own coroutine. 
-                    // Throttling is handled by the aiService thread pool.
-                    launch { harvest(event) }
-                }
-        }
+) : SlopHandler<StoryDiscovered> {
+
+    override suspend fun onEvent(event: StoryDiscovered) {
+        harvest(event)
     }
 
     private suspend fun harvest(event: StoryDiscovered) {
@@ -61,7 +54,7 @@ class Harvester(
             
             logger.info { "Harvester: AI process finished for ${event.title} with exit code: ${result.exitCode}" }
             
-            eventStream.emit(
+            emit(
                 HarvestComplete(
                     storyId = event.id,
                     cleanText = result.stdout,

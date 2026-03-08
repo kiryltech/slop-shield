@@ -1,6 +1,51 @@
 package ai.slopshield.core
 
 import java.time.Instant
+import kotlin.reflect.KClass
+import java.lang.reflect.ParameterizedType
+
+/**
+ * Functional interface for emitting events into the stream.
+ */
+typealias SlopEmitter = suspend (SlopEvent) -> Unit
+
+/**
+ * Annotation to mark a class as an event listener.
+ * These will be discovered and instantiated by the EventCoordinator.
+ */
+@Target(AnnotationTarget.CLASS)
+annotation class SlopListener
+
+/**
+ * Interface for components that handle domain events.
+ */
+interface SlopHandler<T : SlopEvent> {
+    /**
+     * The type of event this handler is interested in.
+     * Derived at runtime from the generic type parameter.
+     */
+    @Suppress("UNCHECKED_CAST")
+    val eventType: KClass<T>
+        get() {
+            // Find the SlopHandler interface in the hierarchy
+            val type = this::class.java.genericInterfaces
+                .filterIsInstance<ParameterizedType>()
+                .first { it.rawType == SlopHandler::class.java }
+                .actualTypeArguments[0]
+            
+            return (type as Class<T>).kotlin
+        }
+
+    /**
+     * Optional filter to further refine which events are processed.
+     */
+    fun canHandle(event: T): Boolean = true
+
+    /**
+     * Processes the event.
+     */
+    suspend fun onEvent(event: T)
+}
 
 /**
  * Base interface for all events within the SlopShield Domain Event Stream.

@@ -67,12 +67,17 @@ class HarvesterTest {
         }
 
         val harvester = Harvester(
-            scope = backgroundScope,
             httpClient = httpClient,
-            eventStream = InternalDomainEventStream,
+            emit = { event -> InternalDomainEventStream.emit(event) },
             aiService = mockAIService
         )
-        harvester.start()
+        
+        // Manual event processing for unit test (avoiding EventCoordinator complexity)
+        backgroundScope.launch {
+            InternalDomainEventStream.events
+                .filterIsInstance<StoryDiscovered>()
+                .collect { harvester.onEvent(it) }
+        }
 
         // Emit discovery event
         InternalDomainEventStream.emit(

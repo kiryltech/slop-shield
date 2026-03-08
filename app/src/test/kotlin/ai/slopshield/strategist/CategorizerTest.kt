@@ -35,11 +35,15 @@ class CategorizerTest {
         }
 
         val categorizer = Categorizer(
-            scope = backgroundScope,
-            eventStream = InternalDomainEventStream,
+            emit = { event -> InternalDomainEventStream.emit(event) },
             aiService = mockAIService
         )
-        categorizer.start()
+        
+        backgroundScope.launch {
+            InternalDomainEventStream.events
+                .filterIsInstance<HarvestComplete>()
+                .collect { categorizer.onEvent(it) }
+        }
 
         // Emit harvest complete event
         InternalDomainEventStream.emit(
@@ -68,11 +72,15 @@ class CategorizerTest {
         }
 
         val categorizer = Categorizer(
-            scope = backgroundScope,
-            eventStream = InternalDomainEventStream,
+            emit = { event -> InternalDomainEventStream.emit(event) },
             aiService = mockAIService
         )
-        categorizer.start()
+        
+        backgroundScope.launch {
+            InternalDomainEventStream.events
+                .filterIsInstance<HarvestComplete>()
+                .collect { categorizer.onEvent(it) }
+        }
 
         // Emit harvest complete event
         InternalDomainEventStream.emit(
@@ -103,11 +111,15 @@ class CategorizerTest {
         }
 
         val categorizer = Categorizer(
-            scope = backgroundScope,
-            eventStream = InternalDomainEventStream,
+            emit = { event -> InternalDomainEventStream.emit(event) },
             aiService = mockAIService
         )
-        categorizer.start()
+        
+        backgroundScope.launch {
+            InternalDomainEventStream.events
+                .filterIsInstance<HarvestComplete>()
+                .collect { categorizer.onEvent(it) }
+        }
 
         // Emit harvest complete event
         InternalDomainEventStream.emit(
@@ -135,11 +147,15 @@ class CategorizerTest {
         }
 
         val categorizer = Categorizer(
-            scope = backgroundScope,
-            eventStream = InternalDomainEventStream,
+            emit = { event -> InternalDomainEventStream.emit(event) },
             aiService = mockAIService
         )
-        categorizer.start()
+        
+        backgroundScope.launch {
+            InternalDomainEventStream.events
+                .filterIsInstance<HarvestComplete>()
+                .collect { categorizer.onEvent(it) }
+        }
 
         // Emit harvest complete event
         InternalDomainEventStream.emit(

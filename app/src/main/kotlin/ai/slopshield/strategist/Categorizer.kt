@@ -1,14 +1,13 @@
 package ai.slopshield.strategist
 
 import ai.slopshield.core.AIService
-import ai.slopshield.core.DomainEventStream
 import ai.slopshield.core.HarvestComplete
+import ai.slopshield.core.SlopEmitter
+import ai.slopshield.core.SlopHandler
+import ai.slopshield.core.SlopListener
 import ai.slopshield.core.StoryCategorized
 import ai.slopshield.core.StoryCategory
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -24,19 +23,13 @@ data class CategorizationResult(
  * The Categorizer domain service.
  * Listens for [HarvestComplete] events and uses the [AIService] to classify
  * stories into high-level categories (WRITING, PRODUCT, DEMO, etc.).
- *
- * This allows the system to filter out non-content links (like product pages)
- * or prioritize certain types of content for the Strategist.
- *
- * @property scope The coroutine scope for background processing.
- * @property eventStream The domain event stream for communication.
- * @property aiService The shared AI execution engine.
  */
+@SlopListener
 class Categorizer(
-    private val scope: CoroutineScope,
-    private val eventStream: DomainEventStream,
+    private val emit: SlopEmitter,
     private val aiService: AIService
-) {
+) : SlopHandler<HarvestComplete> {
+
     private val prompt = """
         Analyze the following web page content and categorize it into one of these categories:
         - WRITING: Blog posts, articles, essays, news stories.
@@ -49,16 +42,12 @@ class Categorizer(
         Format: {"category": "CATEGORY_NAME", "reasoning": "brief explanation"}
     """.trimIndent()
 
-    fun start() {
-        scope.launch {
-            eventStream.events
-                .filterIsInstance<HarvestComplete>()
-                .collect { event ->
-                    if (event.exitCode == 0) {
-                        launch { categorize(event) }
-                    }
-                }
-        }
+    override fun canHandle(event: HarvestComplete): Boolean {
+        return event.exitCode == 0
+    }
+
+    override suspend fun onEvent(event: HarvestComplete) {
+        categorize(event)
     }
 
     private suspend fun categorize(event: HarvestComplete) {
@@ -77,7 +66,7 @@ class Categorizer(
 
                 logger.info { "Categorizer: Story ${event.storyId} categorized as $category. Reasoning: ${parsed.reasoning}" }
                 
-                eventStream.emit(
+                emit(
                     StoryCategorized(
                         storyId = event.storyId,
                         category = category,
