@@ -3,9 +3,9 @@
 This document outlines the incremental development phases for **Project SlopShield**.
 
 ## Phase 1: Foundation & The Domain Event Stream
-**Goal:** Establish the "Modular Monolith" architecture using Kotlin Coroutines and Channels.
+**Goal:** Establish the reactive "Modular Monolith" architecture using Kotlin Coroutines and Flows.
 - [x] Define internal `Event` types: `StoryDiscovered`, `HarvestComplete`, `ContextResponse`, `AnalysisComplete`.
-- [x] Implement the `InternalDomainEventStream` using Kotlin `Channels` for non-blocking communication.
+- [x] Implement the `EventCoordinator` using Kotlin `SharedFlow` and reflection-based discovery.
 - [x] Scaffold the domain packages: `scout`, `harvester`, `memory`, `strategist`, `observability`.
 
 ## Phase 2: The Scout & The Harvester
@@ -36,11 +36,16 @@ This document outlines the incremental development phases for **Project SlopShie
 - [x] Set up **MapDB** with `transactionEnable()` and `BTreeMap` for sorted story indexing.
 - [x] Implement **StoryProjector** for centralized state management.
 - [x] Track pipeline state through **ProjectableEvent** pattern.
-- [ ] Implement basic logging/metrics for the "Satirical Observability" domain.
 - [x] Implement **HarvestDumper** for debug disk persistence.
+- [ ] Implement basic logging/metrics for the "Satirical Observability" domain.
 
 ## Phase 6: Delivery & UI
 **Goal:** A functional prototype for daily use.
-- [ ] Build a minimalist Web UI (Ktor + HTMX or React).
+- [x] Build a minimalist Web UI (Ktor + HTML DSL).
 - [ ] Display the **Signal** (high-score stories) and the **Noise Bin** (filtered slop).
 - [ ] Add "Deep Dive" view to read the Sparring Notes.
+
+## Phase 7: Future Iterations & Polishing
+- [ ] Transition to a rich, interactive UI (React or Compose HTML).
+- [ ] Implement real-time dashboard updates via WebSockets.
+- [ ] Add "Deep Dive" visualizations for SECV scoring distributions.

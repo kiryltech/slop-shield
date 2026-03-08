@@ -16,8 +16,9 @@ The internal intelligence driving the analysis is known as **The Curator**.
 ## **2. TECHNICAL STACK & CONSTRAINTS**
 
 *   **Platform:** **Kotlin (JVM)**. Chosen for robust multi-threading and type-safe service boundaries.
-*   **Concurrency:** Kotlin **Coroutines** & **Channels** (simulating the internal Domain Event Stream).
+*   **Concurrency:** Kotlin **Coroutines** & **Flows** (simulating the internal Domain Event Stream via **SharedFlow**).
 *   **AI Engine:** **The Curator** (a Gemini CLI Wrapper). The system executes local Gemini CLI sessions to perform deep analysis while maintaining local auth and cost efficiency.
+*   **Orchestration:** **EventCoordinator**. A reflection-based discovery layer that automatically wires **SlopHandlers** and **SlopServices** into the event stream.
 *   **Memory Strategy:** **Full-Context Injection**. The "Memory" module aggregates the entire local corpus into the LLM context window for V1.
 *   **Persistence:** **MapDB** (Embedded NoSQL).
     *   *Why MapDB?* Provides a "zero-boilerplate" experience by persisting standard Kotlin Maps to disk.
@@ -91,11 +92,18 @@ The internal intelligence driving the analysis is known as **The Curator**.
 ---
 
 ## **6. V1 SCOPE (DEFINITION OF DONE)**
-*   [ ] Kotlin/JVM project structure with clear package boundaries.
-*   [ ] **Scout** service polling top 30 HN stories.
-*   [ ] **Harvester** integration via Gemini CLI.
+*   [x] Kotlin/JVM project structure with clear package boundaries.
+*   [x] **Scout** service polling top 30 HN stories.
+*   [x] **Harvester** integration via Gemini CLI.
 *   [ ] **Memory** service reading local markdown files.
-*   [ ] **Strategist (The Curator)** service wrapping `gemini` CLI calls.
-*   [ ] **Internal Domain Event Stream** implemented using Kotlin `Channels`.
-*   [ ] Minimalist **Web UI** showing the **Signal** and the **Noise Bin**.
-*   [ ] **Zero instances of Kafka or Kubernetes.**
+*   [x] **Strategist (The Curator)** service wrapping `gemini` CLI calls (AIService).
+*   [x] **EventCoordinator** for automated, reactive orchestration.
+*   [x] Minimalist **Web UI** showing the **Signal** (Dashboard).
+*   [x] **Zero instances of Kafka or Kubernetes.**
+
+---
+
+## **7. FUTURE ITERATIONS (POST-V1)**
+*   **Enhanced UI/UX:** Transition from a minimalist, server-side DSL dashboard to a rich, interactive frontend (e.g., React or Compose HTML) featuring real-time updates and "Deep Dive" visualizations.
+*   **Advanced Filtering:** Multi-dimensional sorting and user-defined "Noise Profiles" for more granular control over the Curator's lens.
+*   **Real-time Interactivity:** Integration of WebSockets for live event streaming directly to the dashboard.
