@@ -1,9 +1,5 @@
 package ai.slopshield.core
 
-import io.github.oshai.kotlinlogging.KotlinLogging
-
-private val logger = KotlinLogging.logger {}
-
 /**
  * The StoryProjector listens to all projectable events and updates the StoryRepository.
  */

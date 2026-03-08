@@ -1,8 +1,8 @@
 package ai.slopshield.core
 
+import java.lang.reflect.ParameterizedType
 import java.time.Instant
 import kotlin.reflect.KClass
-import java.lang.reflect.ParameterizedType
 
 /**
  * Annotation to mark a class as an event listener.
@@ -10,6 +10,21 @@ import java.lang.reflect.ParameterizedType
  */
 @Target(AnnotationTarget.CLASS)
 annotation class SlopListener
+
+/**
+ * Annotation to mark a class as a standalone domain service.
+ * These will be discovered and started by the [EventCoordinator].
+ */
+@Target(AnnotationTarget.CLASS)
+annotation class SlopService
+
+/**
+ * Interface for active domain services that need explicit starting and optional stopping.
+ */
+interface SlopServiceLifecycle {
+    fun start()
+    fun stop() {}
+}
 
 /**
  * Interface for components that handle domain events.

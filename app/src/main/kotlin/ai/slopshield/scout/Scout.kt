@@ -1,17 +1,19 @@
 package ai.slopshield.scout
 
 import ai.slopshield.core.SlopEvent
+import ai.slopshield.core.SlopService
+import ai.slopshield.core.SlopServiceLifecycle
 import ai.slopshield.core.StoryDiscovered
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.serialization.Serializable
 import java.time.Duration
 import java.util.*
@@ -30,13 +32,14 @@ data class HnStory(
  * The Scout domain service.
  * Periodically polls the HN Firebase API for top stories.
  */
+@SlopService
 class Scout(
     private val scope: CoroutineScope,
     private val client: HttpClient,
     private val collector: FlowCollector<SlopEvent>,
     private val pollInterval: Duration = Duration.ofMinutes(15),
     private val limit: Int = Integer.getInteger("slopshield.ai.scout.limit", 30)
-) {
+) : SlopServiceLifecycle {
     private val discoveredIds = Collections.synchronizedSet(object : LinkedHashSet<Long>() {
         private val MAX_ENTRIES = 1000
         override fun add(element: Long): Boolean {
@@ -51,7 +54,7 @@ class Scout(
         }
     })
 
-    fun start() {
+    override fun start() {
         scope.launch {
             while (isActive) {
                 try {

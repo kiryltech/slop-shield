@@ -1,17 +1,15 @@
 package ai.slopshield.core
 
-import ai.slopshield.scout.Scout
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.serialization.json.Json
-import java.time.Duration
 import kotlin.reflect.KClass
 
 private val logger = KotlinLogging.logger {}
@@ -42,21 +40,17 @@ class AppContext(private val scope: CoroutineScope) {
     )
 
     private val coordinator = EventCoordinator(scope, eventStream, registry)
-    private val scout = Scout(scope, httpClient, eventStream)
 
     fun start() {
         logger.info { "AppContext: Initializing SlopShield core services..." }
         
-        // Start orchestration
+        // coordinator.start() will discover and start all SlopHandlers and SlopServices
         coordinator.start()
-
-        // Start active producers
-        logger.info { "AppContext: Starting active producers..." }
-        scout.start()
     }
 
     suspend fun stop() {
         logger.info { "AppContext: Shutting down services..." }
+        coordinator.stop()
         aiService.shutdown()
         httpClient.close()
         repository.close()

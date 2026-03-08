@@ -34,7 +34,13 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlin.reflect)
 
+    // Ktor Server
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.html.builder)
+
     // Logging
+
     implementation(libs.kotlin.logging)
     implementation(libs.logback.classic)
 

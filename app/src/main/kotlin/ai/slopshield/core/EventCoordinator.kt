@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import org.reflections.Reflections
 import kotlin.reflect.KClass
+import kotlin.reflect.KParameter
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.primaryConstructor
@@ -13,8 +14,8 @@ import kotlin.reflect.full.primaryConstructor
 private val logger = KotlinLogging.logger {}
 
 /**
- * Discovers and orchestrates all SlopHandlers.
- * It uses reflection to find annotated listeners and manages their lifecycle.
+ * Discovers and orchestrates all SlopHandlers and SlopServices.
+ * It uses reflection to find annotated components and manages their lifecycle.
  */
 class EventCoordinator(
     private val scope: CoroutineScope,
@@ -22,31 +23,43 @@ class EventCoordinator(
     private val registry: Map<KClass<*>, Any>
 ) {
     private val handlers = mutableListOf<SlopHandler<*>>()
+    private val services = mutableListOf<SlopServiceLifecycle>()
 
     fun start(packageName: String = "ai.slopshield") {
-        logger.info { "EventCoordinator: Scanning for listeners in $packageName..." }
+        logger.info { "EventCoordinator: Scanning for components in $packageName..." }
         
         val reflections = Reflections(packageName)
-        val listenerClasses = reflections.getTypesAnnotatedWith(SlopListener::class.java)
-
-        listenerClasses.forEach { clazz ->
+        
+        // 1. Discover Handlers (Listeners)
+        reflections.getTypesAnnotatedWith(SlopListener::class.java).forEach { clazz ->
             if (SlopHandler::class.java.isAssignableFrom(clazz)) {
-                try {
-                    val handler = instantiateHandler(clazz.kotlin)
-                    handlers.add(handler)
-                    logger.info { "EventCoordinator: Registered handler ${clazz.simpleName} for event ${handler.eventType.simpleName}" }
-                } catch (e: Exception) {
-                    logger.error(e) { "EventCoordinator: Failed to instantiate listener ${clazz.name}" }
-                }
+                val handler = instantiate(clazz.kotlin) as SlopHandler<*>
+                handlers.add(handler)
+                logger.info { "EventCoordinator: Registered handler ${clazz.simpleName} for event ${handler.eventType.simpleName}" }
             }
         }
 
-        // Start listening
+        // 2. Discover Services (Producers/Servers)
+        reflections.getTypesAnnotatedWith(SlopService::class.java).forEach { clazz ->
+            if (SlopServiceLifecycle::class.java.isAssignableFrom(clazz)) {
+                val service = instantiate(clazz.kotlin) as SlopServiceLifecycle
+                services.add(service)
+                service.start()
+                logger.info { "EventCoordinator: Started service ${clazz.simpleName}" }
+            }
+        }
+
+        // 3. Start Event Dispatch Loop
         scope.launch {
             eventStream.collect { event ->
                 dispatch(event)
             }
         }
+    }
+
+    fun stop() {
+        logger.info { "EventCoordinator: Stopping all services..." }
+        services.forEach { it.stop() }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -66,19 +79,23 @@ class EventCoordinator(
             }
     }
 
-    private fun instantiateHandler(clazz: KClass<*>): SlopHandler<*> {
-        val constructor = clazz.primaryConstructor ?: return clazz.createInstance() as SlopHandler<*>
+    private fun instantiate(clazz: KClass<*>): Any {
+        val constructor = clazz.primaryConstructor ?: return clazz.createInstance()
         
-        val args = constructor.parameters.map { param ->
+        val args = mutableMapOf<KParameter, Any?>()
+        constructor.parameters.forEach { param ->
             val paramType = param.type.classifier as? KClass<*>
-            // Find a registry entry where the key is a subclass of the required type
             val dependency = registry.entries.find { (type, _) -> 
                 paramType != null && type.isSubclassOf(paramType)
             }?.value
             
-            dependency ?: throw IllegalArgumentException("No dependency found for type $paramType in constructor of $clazz")
+            if (dependency != null) {
+                args[param] = dependency
+            } else if (!param.isOptional) {
+                throw IllegalArgumentException("No dependency found for required type $paramType in constructor of $clazz")
+            }
         }
 
-        return constructor.call(*args.toTypedArray()) as SlopHandler<*>
+        return constructor.callBy(args)
     }
 }
