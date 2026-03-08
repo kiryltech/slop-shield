@@ -49,6 +49,18 @@ data class ContextResponse(
     override val timestamp: Instant = Instant.now()
 ) : SlopEvent
 
+enum class Alignment {
+    ECHO_CHAMBER,
+    OPPOSITE_VIEW,
+    COMPLEMENTARY
+}
+
+enum class HypeRisk {
+    LOW,
+    MEDIUM,
+    HIGH
+}
+
 /**
  * The final output of the Strategist (The Curator).
  * Contains the deep analysis and SECV scoring of a story.
@@ -58,8 +70,8 @@ data class ContextResponse(
  * @property sa Strategic Actionability score (1-10).
  * @property sd Signal Density score (1-10).
  * @property d Durability score (1-10).
- * @property alignment How the story aligns with your body of work (e.g., "Echo Chamber", "Opposite View").
- * @property hypeRisk The detected level of hype (e.g., "Low", "Medium", "High").
+ * @property alignment How the story aligns with your body of work.
+ * @property hypeRisk The detected level of hype.
  * @property sparringNote A personalized note explaining why this story matters (or doesn't).
  */
 data class AnalysisComplete(
@@ -68,8 +80,8 @@ data class AnalysisComplete(
     val sa: Int,
     val sd: Int,
     val d: Int,
-    val alignment: String,
-    val hypeRisk: String,
+    val alignment: Alignment,
+    val hypeRisk: HypeRisk,
     val sparringNote: String,
     override val timestamp: Instant = Instant.now()
 ) : SlopEvent {

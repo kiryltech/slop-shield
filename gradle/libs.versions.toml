@@ -4,10 +4,19 @@
 [versions]
 guava = "32.1.2-jre"
 coroutines = "1.8.0"
+ktor = "2.3.8"
+kotlinx-serialization = "1.6.3"
 
 [libraries]
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 
 [plugins]
 jvm = { id = "org.jetbrains.kotlin.jvm", version = "1.9.20" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version = "1.9.20" }

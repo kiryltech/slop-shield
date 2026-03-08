@@ -1,0 +1,101 @@
+package ai.slopshield.scout
+
+import ai.slopshield.core.DomainEventStream
+import ai.slopshield.core.StoryDiscovered
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.get
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
+import java.time.Duration
+import java.util.*
+
+@Serializable
+data class HnStory(
+    val id: Long,
+    val title: String,
+    val url: String? = null,
+    val type: String? = null
+)
+
+/**
+ * The Scout domain service.
+ * Periodically polls the HN Firebase API for top stories.
+ */
+class Scout(
+    private val scope: CoroutineScope,
+    private val client: HttpClient,
+    private val eventStream: DomainEventStream,
+    private val pollInterval: Duration = Duration.ofMinutes(15),
+    private val limit: Int = 30
+) {
+    private val discoveredIds = Collections.synchronizedSet(object : LinkedHashSet<Long>() {
+        private val MAX_ENTRIES = 1000
+        override fun add(element: Long): Boolean {
+            if (size >= MAX_ENTRIES) {
+                val iterator = iterator()
+                if (iterator.hasNext()) {
+                    iterator.next()
+                    iterator.remove()
+                }
+            }
+            return super.add(element)
+        }
+    })
+
+    fun start() {
+        scope.launch {
+            while (isActive) {
+                try {
+                    pollTopStories()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    println("Scout: Error polling top stories: ${e.message}")
+                }
+                if (isActive) {
+                    delay(pollInterval.toMillis())
+                }
+            }
+        }
+    }
+
+    internal suspend fun pollTopStories() {
+        println("Scout: Polling Hacker News for top stories...")
+        val topIds: List<Long> = client.get("https://hacker-news.firebaseio.com/v0/topstories.json").body()
+        
+        topIds.take(limit).forEach { id ->
+            // Use add() which returns false if the element was already present (atomic for the set)
+            if (discoveredIds.add(id)) {
+                fetchStory(id)?.let { story ->
+                    val storyUrl = story.url
+                    if (story.type == "story" && storyUrl != null) {
+                        println("Scout: Discovered new story: ${story.title}")
+                        eventStream.emit(
+                            StoryDiscovered(
+                                id = story.id.toString(),
+                                title = story.title,
+                                url = storyUrl
+                            )
+                        )
+                    } else {
+                        // Remove if not a valid story so it can be re-polled if needed
+                        discoveredIds.remove(id)
+                    }
+                } ?: discoveredIds.remove(id) // Remove if fetch failed
+            }
+        }
+    }
+
+    private suspend fun fetchStory(id: Long): HnStory? {
+        return try {
+            client.get("https://hacker-news.firebaseio.com/v0/item/$id.json").body()
+        } catch (e: Exception) {
+            null
+        }
+    }
+}

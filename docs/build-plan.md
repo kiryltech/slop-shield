@@ -10,10 +10,10 @@ This document outlines the incremental development phases for **Project SlopShie
 
 ## Phase 2: The Scout & The Harvester
 **Goal:** Fetch content and extract clean text.
-- [ ] Integrate with [HN Firebase API](https://github.com/HackerNews/API).
-- [ ] Implement a periodic poller for top stories in the **Scout**.
-- [ ] Implement **The Harvester** using the Gemini CLI for initial URL-to-Text extraction.
-- [ ] Orchestrate the flow: `StoryDiscovered` -> `HarvestComplete`.
+- [x] Integrate with [HN Firebase API](https://github.com/HackerNews/API).
+- [x] Implement a periodic poller for top stories in the **Scout**.
+- [x] Implement **The Harvester** using the Gemini CLI for initial URL-to-Text extraction.
+- [x] Orchestrate the flow: `StoryDiscovered` -> `HarvestComplete`.
 
 ## Phase 3: The Memory (Contextual Knowledge)
 **Goal:** Ingest the user's personal "Source of Truth."

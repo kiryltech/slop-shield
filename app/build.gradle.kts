@@ -12,6 +12,9 @@ plugins {
 
     // Apply the application plugin to add support for building a CLI application in Java.
     application
+
+    // Apply the Kotlin Serialization plugin.
+    alias(libs.plugins.kotlin.serialization)
 }
 
 repositories {
@@ -22,6 +25,17 @@ repositories {
 dependencies {
     // This dependency is used by the application.
     implementation(libs.kotlinx.coroutines.core)
+
+    // Ktor Client
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.kotlinx.serialization.json)
+
+    // Testing
+    testImplementation(libs.ktor.client.mock)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
 }
 
 testing {
