@@ -17,9 +17,9 @@ This document outlines the incremental development phases for **Project SlopShie
 
 ## Phase 3: The Memory (Contextual Knowledge)
 **Goal:** Ingest the user's personal "Source of Truth."
-- [ ] Implement a local file scanner for `.md` files.
-- [ ] Add RSS feed parsing (e.g., Medium drafts).
-- [ ] Implement a listener that responds to requests with a "Context Bundle" (`ContextResponse`).
+- [x] Implement a local file scanner for `.md`, `.txt`, and `.xml` files.
+- [x] Implement a listener that responds to requests with a "Context Bundle" (`ContextResponse`).
+- [x] Support personalized instructions via `CONTEXT.md`.
 
 ## Phase 4: The Strategist (The Curator)
 **Goal:** The AI brain of the operation.
