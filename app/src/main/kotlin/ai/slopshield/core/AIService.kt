@@ -45,51 +45,56 @@ open class AIService(
         input: String,
         timeoutSeconds: Long = 120
     ): AIResult = withContext(dispatcher) {
-        val process = ProcessBuilder("gemini", prompt, "-e", "")
-            .redirectErrorStream(false)
-            .start()
+        // Use runBlocking to hold the thread pool thread and prevent yielding 
+        // during suspension points, ensuring the pool size limits the number 
+        // of concurrent OS processes.
+        runBlocking {
+            val process = ProcessBuilder("gemini", prompt, "-e", "")
+                .redirectErrorStream(false)
+                .start()
 
-        coroutineScope {
-            // Start reading stdout and stderr concurrently to prevent deadlock
-            val stdoutDeferred = async(Dispatchers.IO) {
-                process.inputStream.bufferedReader().use { it.readText() }.trim()
-            }
-            val stderrDeferred = async(Dispatchers.IO) {
-                process.errorStream.bufferedReader().use { it.readText() }.trim()
-            }
+            coroutineScope {
+                // Start reading stdout and stderr concurrently to prevent deadlock
+                val stdoutDeferred = async(Dispatchers.IO) {
+                    process.inputStream.bufferedReader().use { it.readText() }.trim()
+                }
+                val stderrDeferred = async(Dispatchers.IO) {
+                    process.errorStream.bufferedReader().use { it.readText() }.trim()
+                }
 
-            // Write input to process stdin
-            launch(Dispatchers.IO) {
+                // Write input to process stdin
+                launch(Dispatchers.IO) {
+                    try {
+                        process.outputStream.bufferedWriter().use { it.write(input) }
+                    } catch (e: Exception) {
+                        logger.warn { "AIService: Failed to write to process stdin: ${e.message}" }
+                    }
+                }
+
                 try {
-                    process.outputStream.bufferedWriter().use { it.write(input) }
+                    val finished = withContext(Dispatchers.IO) {
+                        process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
+                    }
+
+                    val stdout = stdoutDeferred.await()
+                    val stderr = stderrDeferred.await()
+
+                    if (!finished) {
+                        logger.error { "AIService: Gemini process timed out for prompt: ${prompt.take(50)}..." }
+                        process.destroyForcibly()
+                        AIResult(stdout, stderr, -1)
+                    } else {
+                        AIResult(stdout, stderr, process.exitValue())
+                    }
                 } catch (e: Exception) {
-                    logger.warn { "AIService: Failed to write to process stdin: ${e.message}" }
-                }
-            }
-
-            try {
-                val finished = withContext(Dispatchers.IO) {
-                    process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
-                }
-
-                val stdout = stdoutDeferred.await()
-                val stderr = stderrDeferred.await()
-
-                if (!finished) {
-                    logger.error { "AIService: Gemini process timed out for prompt: ${prompt.take(50)}..." }
+                    logger.error(e) { "AIService: Exception during Gemini execution" }
                     process.destroyForcibly()
-                    AIResult(stdout, stderr, -1)
-                } else {
-                    AIResult(stdout, stderr, process.exitValue())
+                    AIResult("", e.message ?: "Unknown error", -1)
+                } finally {
+                    process.inputStream.close()
+                    process.errorStream.close()
+                    process.outputStream.close()
                 }
-            } catch (e: Exception) {
-                logger.error(e) { "AIService: Exception during Gemini execution" }
-                process.destroyForcibly()
-                AIResult("", e.message ?: "Unknown error", -1)
-            } finally {
-                process.inputStream.close()
-                process.errorStream.close()
-                process.outputStream.close()
             }
         }
     }

@@ -39,20 +39,9 @@ class Strategist(
     private var currentContext: String = ""
     private var analysisJob: kotlinx.coroutines.Job? = null
 
-    private fun generatePrompt(context: String, title: String, url: String, content: String): String = """
+    private fun generateInstructions(): String = """
         You are "The Curator", a highly opinionated and experienced Software Engineer.
-        Your goal is to evaluate technical stories through the lens of the provided PERSONAL CONTEXT.
-
-        --- PERSONAL CONTEXT (My Source of Truth) ---
-        $context
-        --- END PERSONAL CONTEXT ---
-
-        --- STORY CONTENT ---
-        Title: $title
-        URL: $url
-        Content:
-        $content
-        --- END STORY CONTENT ---
+        Your goal is to evaluate the technical story provided in the input through the lens of my PERSONAL CONTEXT (also provided in the input).
 
         Evaluate this story using the SECV Scoring Rubric (0-10):
         - MMS (Mental Model Shift): Does this change how I think, or just confirm what I know?
@@ -68,6 +57,19 @@ class Strategist(
 
         CRITICAL: Output ONLY a raw JSON object.
         Format: {"mms": 0, "sa": 0, "sd": 0, "d": 0, "alignment": "ECHO_CHAMBER", "hypeRisk": "LOW", "sparringNote": "..."}
+    """.trimIndent()
+
+    private fun generateData(context: String, title: String, url: String, content: String): String = """
+        --- PERSONAL CONTEXT (My Source of Truth) ---
+        $context
+        --- END PERSONAL CONTEXT ---
+
+        --- STORY CONTENT ---
+        Title: $title
+        URL: $url
+        Content:
+        $content
+        --- END STORY CONTENT ---
     """.trimIndent()
 
     override fun start() {
@@ -114,7 +116,8 @@ class Strategist(
 
         logger.info { "Strategist: Performing deep analysis on story: ${story.title}" }
 
-        val prompt = generatePrompt(
+        val instructions = generateInstructions()
+        val data = generateData(
             context = currentContext,
             title = story.title,
             url = story.url,
@@ -122,7 +125,7 @@ class Strategist(
         )
 
         try {
-            val result = aiService.process(prompt, "") // Input already in prompt for now
+            val result = aiService.process(instructions, data)
             if (result.exitCode == 0) {
                 val jsonContent = sanitizeJson(result.stdout)
                 val parsed = Json.decodeFromString<DeepAnalysisResult>(jsonContent)

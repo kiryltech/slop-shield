@@ -1,8 +1,8 @@
 package ai.slopshield.core
 
+import java.io.Serializable
 import java.time.Instant
 import kotlin.reflect.KClass
-import java.lang.reflect.ParameterizedType
 
 /**
  * Functional interface for evaluating whether a component should be enabled.
@@ -191,7 +191,7 @@ data class AnalysisComplete(
     val hypeRisk: HypeRisk,
     val sparringNote: String,
     override val timestamp: Instant = Instant.now()
-) : ProjectableEvent {
+) : ProjectableEvent, Serializable {
     /**
      * The weighted average score derived from the SECV rubric.
      */
