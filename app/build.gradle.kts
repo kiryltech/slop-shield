@@ -33,6 +33,10 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.kotlinx.serialization.json)
 
+    // Logging
+    implementation(libs.kotlin.logging)
+    implementation(libs.logback.classic)
+
     // Testing
     testImplementation(libs.ktor.client.mock)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")

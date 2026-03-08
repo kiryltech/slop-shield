@@ -5,6 +5,7 @@ import ai.slopshield.core.StoryDiscovered
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -13,6 +14,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.time.Duration
 import java.util.*
+
+private val logger = KotlinLogging.logger {}
 
 @Serializable
 data class HnStory(
@@ -55,7 +58,7 @@ class Scout(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    println("Scout: Error polling top stories: ${e.message}")
+                    logger.error(e) { "Scout: Error polling top stories" }
                 }
                 if (isActive) {
                     delay(pollInterval.toMillis())
@@ -65,7 +68,7 @@ class Scout(
     }
 
     internal suspend fun pollTopStories() {
-        println("Scout: Polling Hacker News for top stories...")
+        logger.debug { "Scout: Polling Hacker News for top stories..." }
         val topIds: List<Long> = client.get("https://hacker-news.firebaseio.com/v0/topstories.json").body()
         
         topIds.take(limit).forEach { id ->
@@ -74,7 +77,7 @@ class Scout(
                 fetchStory(id)?.let { story ->
                     val storyUrl = story.url
                     if (story.type == "story" && storyUrl != null) {
-                        println("Scout: Discovered new story: ${story.title}")
+                        logger.info { "Scout: Discovered new story: ${story.title}" }
                         eventStream.emit(
                             StoryDiscovered(
                                 id = story.id.toString(),
@@ -95,6 +98,7 @@ class Scout(
         return try {
             client.get("https://hacker-news.firebaseio.com/v0/item/$id.json").body()
         } catch (e: Exception) {
+            logger.warn(e) { "Scout: Failed to fetch story details for ID: $id" }
             null
         }
     }

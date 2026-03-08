@@ -3,6 +3,7 @@ package ai.slopshield.harvester
 import ai.slopshield.core.DomainEventStream
 import ai.slopshield.core.HarvestComplete
 import ai.slopshield.core.StoryDiscovered
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -11,6 +12,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URI
 import java.util.concurrent.TimeUnit
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * The Harvester domain service.
@@ -33,7 +36,7 @@ class Harvester(
     }
 
     private suspend fun harvest(event: StoryDiscovered) {
-        println("Harvester: Harvesting clean text for story: ${event.title} (${event.url})")
+        logger.debug { "Harvester: Harvesting clean text for story: ${event.title} (${event.url})" }
         
         withContext(ioDispatcher) {
             try {
@@ -42,16 +45,18 @@ class Harvester(
                 
                 val cleanText = scraper(event.url)
                 if (cleanText.isNotBlank()) {
-                    println("Harvester: Successfully harvested ${cleanText.length} characters for: ${event.title}")
+                    logger.info { "Harvester: Successfully harvested ${cleanText.length} characters for: ${event.title}" }
                     eventStream.emit(
                         HarvestComplete(
                             storyId = event.id,
                             cleanText = cleanText
                         )
                     )
+                } else {
+                    logger.warn { "Harvester: Scraper returned empty text for: ${event.title}" }
                 }
             } catch (e: Exception) {
-                println("Harvester: Error harvesting ${event.url}: ${e.message}")
+                logger.error(e) { "Harvester: Error harvesting ${event.url}" }
             }
         }
     }
@@ -73,11 +78,13 @@ private fun runGeminiScraper(url: String): String {
     return try {
         val finished = process.waitFor(60, TimeUnit.SECONDS)
         if (!finished) {
+            logger.error { "Harvester: Gemini scraper timed out for URL: $url" }
             process.destroyForcibly()
             return ""
         }
         process.inputStream.bufferedReader().use { it.readText() }.trim()
     } catch (e: Exception) {
+        logger.error(e) { "Harvester: Exception during Gemini scraper execution" }
         process.destroyForcibly()
         ""
     } finally {

@@ -7,13 +7,16 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import java.time.Duration
 
+private val logger = KotlinLogging.logger {}
+
 class App {
     fun run() = runBlocking {
-        println("🛡️ Project SlopShield: Starting the Domain Event Stream...")
+        logger.info { "🛡️ Project SlopShield: Starting the Domain Event Stream..." }
 
         val httpClient = HttpClient(CIO) {
             install(ContentNegotiation) {
@@ -30,11 +33,11 @@ class App {
         val scout = Scout(appScope, httpClient, InternalDomainEventStream, pollInterval = Duration.ofMinutes(15))
         val harvester = Harvester(appScope, InternalDomainEventStream)
 
-        println("🛡️ Starting the Scout and Harvester...")
+        logger.info { "🛡️ Starting the Scout and Harvester..." }
         harvester.start()
         scout.start()
 
-        println("🛡️ SlopShield is running. Press Ctrl+C to stop.")
+        logger.info { "🛡️ SlopShield is running. Press Ctrl+C to stop." }
         
         // Wait for the supervisor job children to complete
         supervisor.children.toList().joinAll()
