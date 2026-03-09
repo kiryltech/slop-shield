@@ -25,9 +25,11 @@ function createStoryCard(story) {
     const isActive = selectedStoryId === story.id;
     const alignmentLabel = analysis ? analysis.alignment.replace('_', ' ') : 'PENDING';
     const alignmentClass = analysis ? 'alignment-' + analysis.alignment.toLowerCase() : 'alignment-pending';
+    const isContentLoaded = !!story.cleanText;
 
     return `
-        <div onclick="selectStory('${story.id}')" class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border-l-4 ${getBorderColor(categoryClass)} overflow-hidden hover:shadow-md transition-shadow group cursor-pointer ${isActive ? 'active ring-2 ring-primary bg-primary/5' : ''}">
+        <div onclick="selectStory('${story.id}')" class="relative bg-white dark:bg-slate-900 rounded-xl shadow-sm border-l-4 ${getBorderColor(categoryClass)} overflow-hidden hover:shadow-md transition-shadow group cursor-pointer ${isActive ? 'active ring-2 ring-primary bg-primary/5' : ''}">
+            ${isContentLoaded ? '<div class="content-loaded-icon" title="Content Harvested"><span class="material-symbols-outlined fill-1">check_circle</span></div>' : ''}
             <div class="flex">
                 <div class="w-24 shrink-0 flex flex-col items-center justify-center bg-primary/5 p-4 border-r border-primary/5">
                     <span class="signal-score text-3xl font-bold ${score > 7 ? 'text-primary' : 'text-slate-400'}">${scoreFixed}</span>

@@ -19,3 +19,15 @@
 .alignment-orthogonal { background-color: #f3e8ff; color: #7e22ce; }
 .alignment-irrelevant { background-color: #f1f5f9; color: #475569; }
 .alignment-pending { background-color: #f1f5f9; color: #64748b; }
+
+/* Status Indicators */
+.content-loaded-icon {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    color: #22c55e;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
