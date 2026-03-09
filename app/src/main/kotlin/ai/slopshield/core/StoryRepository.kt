@@ -1,17 +1,19 @@
 package ai.slopshield.core
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.serialization.Serializable
 import org.mapdb.DB
 import org.mapdb.Serializer
 import org.mapdb.serializer.GroupSerializer
-import java.io.Serializable
+import java.io.Serializable as JavaSerializable
 import java.util.concurrent.ConcurrentMap
 
 private val logger = KotlinLogging.logger {}
 
 /**
- * Domain model representing a processed story.
+ * Data model for a processed story.
  */
+@Serializable
 data class Story(
     val id: String,
     val title: String,
@@ -20,7 +22,8 @@ data class Story(
     val category: StoryCategory? = null,
     val categoryReasoning: String? = null,
     val analysis: AnalysisComplete? = null
-) : Serializable
+) : JavaSerializable
+
 
 /**
  * Repository for managing persistent storage of stories using MapDB.

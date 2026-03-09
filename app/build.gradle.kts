@@ -38,6 +38,8 @@ dependencies {
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.html.builder)
+    implementation(libs.ktor.server.content.negotiation)
+    implementation(libs.ktor.server.websockets)
 
     // Logging
 
@@ -52,6 +54,7 @@ dependencies {
 
     // Testing
     testImplementation(libs.ktor.client.mock)
+    testImplementation(libs.ktor.server.test.host)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
 }
 
