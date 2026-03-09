@@ -61,7 +61,7 @@ open class AIService(
         // during suspension points, ensuring the pool size limits the number 
         // of concurrent OS processes.
         runBlocking {
-            val process = ProcessBuilder("gemini", prompt, "-m", "gemini-3.1-pro-preview", "-e", "")
+            val process = ProcessBuilder("gemini", prompt, "-e", "")
                 .redirectErrorStream(false)
                 .start()
 
