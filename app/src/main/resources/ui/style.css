@@ -1,0 +1,19 @@
+.signal-score { font-family: 'JetBrains Mono', monospace; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #f1c40e40; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #f1c40e; }
+.story-card.active { border-right: 4px solid #f1c40e; background: #f1c40e05; }
+
+/* Category Border Colors */
+.border-green-500 { border-left-color: #22c55e !important; }
+.border-red-500 { border-left-color: #ef4444 !important; }
+.border-purple-500 { border-left-color: #a855f7 !important; }
+.border-orange-500 { border-left-color: #f97316 !important; }
+.border-slate-300 { border-left-color: #cbd5e1 !important; }
+
+/* Alignment Backgrounds */
+.alignment-opposite_view { background-color: #d1fae5; color: #047857; }
+.alignment-echo_chamber { background-color: #fef3c7; color: #b45309; }
+.alignment-complementary { background-color: #dbeafe; color: #1d4ed8; }
+.alignment-pending { background-color: #f1f5f9; color: #64748b; }
