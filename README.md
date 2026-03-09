@@ -21,6 +21,47 @@ At the core of the system is **The Curator**, an AI agent that scores content us
 *   **(SD) Signal Density:** Is the content "meat" or "fluff"?
 *   **(D) Durability:** Will the core concepts still matter in 2 years?
 
+## 📂 Personal Context
+
+SlopShield is entirely driven by your "Personal Context". By default, the `MemoryService` reads from a `context/` directory located in the project root. This directory serves as your "Source of Truth".
+
+### Directory Structure
+
+```text
+slop-shield/
+├── context/
+│   ├── CONTEXT.md       # Your core beliefs, goals, and interests
+│   ├── blog.xml         # Your published articles or essays
+│   └── drafts.md        # Work-in-progress thoughts
+├── app/
+...
+```
+
+### Example `CONTEXT.md`
+
+To get the most out of the Curator, you must define what matters to you. A simple `CONTEXT.md` might look like this:
+
+```markdown
+# Core Philosophy
+
+I believe that all software should be written in punch cards and delivered via carrier pigeon to ensure maximum
+durability and intentionality. The cloud is a fad.
+
+# Current Interests
+
+- Vintage typewriter restoration techniques
+- Optimizing algorithms for the Commodore 64
+- The theoretical applications of competitive cheese-rolling in distributed systems
+
+# Anti-Interests (Noise)
+
+- Anything related to "modern web frameworks" (if it requires npm, it's noise)
+- Articles about "synergy", "paradigm shifts", or "leveraging" anything other than a literal crowbar
+- Self-driving car updates (I prefer a good horse)
+```
+
+The Curator uses this context to determine if a story is a "Complementary" fit, an "Opposite View" worth reading, or just "Irrelevant" noise.
+
 ## 🖥️ Dashboard Features
 
 The project includes "The Curator's Lens", a rich, real-time web dashboard used to interact with the analysis engine:
