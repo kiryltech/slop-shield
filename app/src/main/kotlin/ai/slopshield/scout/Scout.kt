@@ -53,7 +53,8 @@ class Scout(
     private val client: HttpClient,
     private val collector: FlowCollector<SlopEvent>,
     private val repository: StoryRepository,
-    private val pollInterval: Duration = Duration.ofMinutes(15),
+    private val pollInterval: Duration = Duration.parse(
+        System.getProperty("slopshield.ai.scout.interval", "PT3M")),
     private val limit: Int = Integer.getInteger("slopshield.ai.scout.limit", 30)
 ) : SlopServiceLifecycle {
 
@@ -61,6 +62,7 @@ class Scout(
      * Starts the continuous polling loop for top stories.
      */
     override fun start() {
+        logger.info { "Scout starting (limit = $limit, poll interval = $pollInterval)..." }
         scope.launch {
             while (isActive) {
                 try {

@@ -2,13 +2,30 @@ package ai.slopshield.core
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.mapdb.DB
+import org.mapdb.DataInput2
+import org.mapdb.DataOutput2
 import org.mapdb.Serializer
-import org.mapdb.serializer.GroupSerializer
+import org.mapdb.serializer.GroupSerializerObjectArray
 import java.util.concurrent.ConcurrentMap
 import java.io.Serializable as JavaSerializable
 
 private val logger = KotlinLogging.logger {}
+
+/**
+ * Custom MapDB Serializer that uses kotlinx.serialization to serialize [Story] objects as JSON.
+ */
+class StoryJsonSerializer : GroupSerializerObjectArray<Story>() {
+    override fun serialize(out: DataOutput2, value: Story) {
+        out.writeUTF(Json.encodeToString(value))
+    }
+
+    override fun deserialize(input: DataInput2, available: Int): Story {
+        return Json.decodeFromString(input.readUTF())
+    }
+}
 
 /**
  * Data model for a processed story.
@@ -48,7 +65,7 @@ class StoryRepository(
     private val stories: ConcurrentMap<String, Story> = db
         .treeMap("stories")
         .keySerializer(Serializer.STRING)
-        .valueSerializer(Serializer.JAVA as GroupSerializer<Story>)
+        .valueSerializer(StoryJsonSerializer())
         .createOrOpen()
 
     /**
