@@ -99,12 +99,13 @@ searchInput.addEventListener('input', (e) => {
 
 function createStoryCard(story) {
     const analysis = story.analysis;
+    const isIgnored = story.category === 'PRODUCT' || story.category === 'SOURCE';
     const score = analysis ? (analysis.mms + analysis.sa + analysis.sd + analysis.d) / 4 : 0;
-    const scoreFixed = score.toFixed(1);
+    const scoreFixed = isIgnored ? 'N/A' : score.toFixed(1);
     const categoryClass = (story.category || 'unknown').toLowerCase();
     const isActive = selectedStoryId === story.id;
-    const alignmentLabel = analysis ? analysis.alignment.replace('_', ' ') : 'PENDING';
-    const alignmentClass = analysis ? 'alignment-' + analysis.alignment.toLowerCase() : 'alignment-pending';
+    const alignmentLabel = isIgnored ? 'SKIPPED' : (analysis ? analysis.alignment.replace('_', ' ') : 'PENDING');
+    const alignmentClass = isIgnored ? 'alignment-pending' : (analysis ? 'alignment-' + analysis.alignment.toLowerCase() : 'alignment-pending');
     const isContentLoaded = !!story.cleanText;
 
     return `
@@ -117,7 +118,7 @@ function createStoryCard(story) {
             </div>
             <div class="flex">
                 <div class="w-24 shrink-0 flex flex-col items-center justify-center bg-primary/5 p-4 border-r border-primary/5">
-                    <span class="signal-score text-3xl font-bold ${score > 7 ? 'text-primary' : 'text-slate-400'}">${scoreFixed}</span>
+                    <span class="signal-score ${isIgnored ? 'text-lg' : 'text-3xl'} font-bold ${score > 7 ? 'text-primary' : 'text-slate-400'}">${scoreFixed}</span>
                     <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Signal</span>
                 </div>
                 <div class="flex-1 p-5">
@@ -125,7 +126,7 @@ function createStoryCard(story) {
                         <div>
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="text-[10px] font-bold px-2 py-0.5 rounded ${alignmentClass}">${alignmentLabel}</span>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${getHypeBg(analysis)}">${analysis ? 'HYPE: ' + analysis.hypeRisk : 'WAITING'}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${getHypeBg(analysis)}">${analysis ? 'HYPE: ' + analysis.hypeRisk : (isIgnored ? 'N/A' : 'WAITING')}</span>
                             </div>
                             <h3 class="font-bold text-lg group-hover:text-primary transition-colors">${story.title}</h3>
                             <p class="text-xs text-slate-400 mt-0.5">${new URL(story.url).hostname}</p>
@@ -179,6 +180,7 @@ function selectStory(id) {
 function renderDetailPane(story) {
     if (!story) return;
     const analysis = story.analysis;
+    const isIgnored = story.category === 'PRODUCT' || story.category === 'SOURCE';
 
     detailPane.innerHTML = `
         <div class="p-6 border-b border-primary/10">
@@ -211,7 +213,12 @@ function renderDetailPane(story) {
                         <p class="text-sm leading-relaxed text-slate-700 dark:text-slate-300 italic">"${analysis.sparringNote}"</p>
                     </div>
                 </section>
-            ` : '<p class="text-center p-10 text-slate-400 italic">Deep SECV analysis in progress...</p>'}
+            ` : (isIgnored ? `
+                <div class="p-10 text-center bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+                    <span class="material-symbols-outlined text-slate-300 text-4xl mb-3">block</span>
+                    <p class="text-sm text-slate-500 italic">Deep SECV analysis is currently disabled for ${story.category} content to maintain high signal focus. Only articles, videos, and demos are analyzed.</p>
+                </div>
+            ` : '<p class="text-center p-10 text-slate-400 italic">Deep SECV analysis in progress...</p>')}
             <section>
                 <div class="flex items-center gap-2 mb-3">
                     <span class="material-symbols-outlined text-primary">terminal</span>
