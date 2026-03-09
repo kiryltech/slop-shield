@@ -1,9 +1,9 @@
 .signal-score { font-family: 'JetBrains Mono', monospace; }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #f1c40e40; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #f1c40e; }
-.story-card.active { border-right: 4px solid #f1c40e; background: #f1c40e05; }
+::-webkit-scrollbar-thumb { background: #3498db40; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #3498db; }
+.story-card.active { border-right: 4px solid #3498db; background: #3498db05; }
 
 /* Category Border Colors */
 .border-green-500 { border-left-color: #22c55e !important; }
