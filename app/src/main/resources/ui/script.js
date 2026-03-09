@@ -213,6 +213,22 @@ function renderDetailPane(story) {
                         <p class="text-sm leading-relaxed text-slate-700 dark:text-slate-300 italic">"${analysis.sparringNote}"</p>
                     </div>
                 </section>
+                ${analysis.reasoningBullets && analysis.reasoningBullets.length > 0 ? `
+                <section>
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="material-symbols-outlined text-primary">account_tree</span>
+                        <h3 class="text-sm font-bold uppercase tracking-wider">Reasoning</h3>
+                    </div>
+                    <ul class="space-y-3">
+                        ${analysis.reasoningBullets.map(bullet => `
+                        <li class="flex items-start gap-3">
+                            <span class="size-1.5 rounded-full bg-primary mt-1.5 shrink-0"></span>
+                            <p class="text-xs text-slate-600 dark:text-slate-400"><span class="font-bold text-slate-800 dark:text-slate-200">${bullet.title}:</span> ${bullet.description}</p>
+                        </li>
+                        `).join('')}
+                    </ul>
+                </section>
+                ` : ''}
             ` : (isIgnored ? `
                 <div class="p-10 text-center bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
                     <span class="material-symbols-outlined text-slate-300 text-4xl mb-3">block</span>

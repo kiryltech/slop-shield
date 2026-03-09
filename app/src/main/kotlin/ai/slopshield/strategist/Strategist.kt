@@ -19,7 +19,8 @@ data class DeepAnalysisResult(
     val d: Int,
     val alignment: String,
     val hypeRisk: String,
-    val sparringNote: String
+    val sparringNote: String,
+    val reasoningBullets: List<ReasoningBullet> = emptyList()
 )
 
 /**
@@ -62,9 +63,11 @@ class Strategist(
         - HIGH: Pure buzzword-driven content, visionary-only manifestos without substance, or clearly AI-generated "slop" designed for SEO.
 
         Provide a "Sparring Note": A concise, direct, and slightly cynical engineering perspective on why I should (or should not) read this, specifically contrasting it with my PERSONAL CONTEXT.
+        
+        Provide "Reasoning Bullets": 3 concise bullet points explaining the core reasons behind your scores and alignment. Each bullet should have a short title (e.g., 'Semantic Alignment') and a description.
 
         CRITICAL: Output ONLY a raw JSON object.
-        Format: {"mms": 0, "sa": 0, "sd": 0, "d": 0, "alignment": "ECHO_CHAMBER", "hypeRisk": "LOW", "sparringNote": "..."}
+        Format: {"mms": 0, "sa": 0, "sd": 0, "d": 0, "alignment": "ECHO_CHAMBER", "hypeRisk": "LOW", "sparringNote": "...", "reasoningBullets": [{"title": "...", "description": "..."}]}
     """.trimIndent()
 
     private fun generateData(context: String, title: String, url: String, content: String): String = """
@@ -147,7 +150,8 @@ class Strategist(
                         d = parsed.d,
                         alignment = try { Alignment.valueOf(parsed.alignment.uppercase()) } catch (e: Exception) { Alignment.COMPLEMENTARY },
                         hypeRisk = try { HypeRisk.valueOf(parsed.hypeRisk.uppercase()) } catch (e: Exception) { HypeRisk.MEDIUM },
-                        sparringNote = parsed.sparringNote
+                        sparringNote = parsed.sparringNote,
+                        reasoningBullets = parsed.reasoningBullets
                     )
                 )
                 logger.info { "Strategist: Analysis complete for ${story.title}. Score: ${(parsed.mms + parsed.sa + parsed.sd + parsed.d) / 4.0}/10" }

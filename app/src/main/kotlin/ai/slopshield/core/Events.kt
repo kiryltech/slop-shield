@@ -254,6 +254,12 @@ enum class HypeRisk {
     LOW, MEDIUM, HIGH
 }
 
+@Serializable
+data class ReasoningBullet(
+    val title: String,
+    val description: String
+) : JavaSerializable
+
 /**
  * The final output of the Strategist (The Curator).
  */
@@ -267,6 +273,7 @@ data class AnalysisComplete(
     val alignment: Alignment,
     val hypeRisk: HypeRisk,
     val sparringNote: String,
+    val reasoningBullets: List<ReasoningBullet> = emptyList(),
     @Serializable(with = InstantSerializer::class)
     override val timestamp: Instant = Instant.now()
 ) : ProjectableEvent, JavaSerializable {
