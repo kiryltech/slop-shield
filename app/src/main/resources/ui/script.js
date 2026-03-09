@@ -15,6 +15,7 @@ async function loadStories() {
 
 function renderStories() {
     storyFeed.innerHTML = stories.map(story => createStoryCard(story)).join('');
+    document.getElementById('inbox-count').innerText = stories.length;
 }
 
 function createStoryCard(story) {
