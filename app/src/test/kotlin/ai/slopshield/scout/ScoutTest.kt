@@ -24,9 +24,15 @@ import java.time.Duration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+/**
+ * Tests for the [Scout] service to ensure it correctly polls and emits newly discovered stories.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ScoutTest {
 
+    /**
+     * Simulates fetching Hacker News top stories and verifies [StoryDiscovered] events.
+     */
     @Test
     fun `test scout discovers new stories`() = runTest {
         val mockEngine = MockEngine { request ->

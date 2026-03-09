@@ -9,10 +9,13 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.jsonObject
-import java.io.Serializable as JavaSerializable
 import java.time.Instant
 import kotlin.reflect.KClass
+import java.io.Serializable as JavaSerializable
 
+/**
+ * Custom serializer for [Instant] to handle string conversion during JSON serialization.
+ */
 object InstantSerializer : KSerializer<Instant> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: Instant) = encoder.encodeString(value.toString())
@@ -20,7 +23,8 @@ object InstantSerializer : KSerializer<Instant> {
 }
 
 /**
- * Custom polymorphic serializer for SlopEvents.
+ * Custom polymorphic serializer for [SlopEvent]s.
+ * Uses the presence of specific keys in the JSON object to determine the subclass type.
  */
 object SlopEventSerializer : JsonContentPolymorphicSerializer<SlopEvent>(SlopEvent::class) {
     override fun selectDeserializer(element: kotlinx.serialization.json.JsonElement) = when {
@@ -37,11 +41,17 @@ object SlopEventSerializer : JsonContentPolymorphicSerializer<SlopEvent>(SlopEve
  * Functional interface for evaluating whether a component should be enabled.
  */
 interface EnabledIf {
+    /**
+     * @return True if the condition is met and the component should be enabled.
+     */
     fun isEnabled(): Boolean
 }
 
 /**
  * Default implementation that checks a system property.
+ *
+ * @property property The system property name to check.
+ * @property expected The expected value of the system property.
  */
 class SystemPropertyCondition(
     private val property: String,
@@ -52,6 +62,7 @@ class SystemPropertyCondition(
 
 /**
  * Specific condition for debug mode.
+ * Checks if the 'slopshield.debug' system property is set to true.
  */
 class DebugEnabledCondition : EnabledIf {
     override fun isEnabled() = java.lang.Boolean.getBoolean("slopshield.debug")
@@ -59,12 +70,14 @@ class DebugEnabledCondition : EnabledIf {
 
 /**
  * Annotation to mark a class as an event listener.
+ * Listeners typically implement [SlopHandler].
  */
 @Target(AnnotationTarget.CLASS)
 annotation class SlopListener
 
 /**
  * Annotation to mark a class as a standalone domain service.
+ * Services typically implement [SlopServiceLifecycle].
  */
 @Target(AnnotationTarget.CLASS)
 annotation class SlopService
@@ -82,7 +95,14 @@ annotation class Enabled(val condition: KClass<out EnabledIf>)
  * Interface for active domain services that need explicit starting and optional stopping.
  */
 interface SlopServiceLifecycle {
+    /**
+     * Called when the application context is started.
+     */
     fun start()
+
+    /**
+     * Called when the application context is stopping.
+     */
     fun stop() {}
 }
 
@@ -103,11 +123,16 @@ interface SlopHandler<T : SlopEvent> {
 
     /**
      * Optional filter to further refine which events are processed.
+     *
+     * @param event The event to check.
+     * @return True if the handler wants to process this event.
      */
     fun canHandle(event: T): Boolean = true
 
     /**
      * Processes the event.
+     *
+     * @param event The event to process.
      */
     suspend fun onEvent(event: T)
 }
@@ -126,15 +151,34 @@ sealed interface SlopEvent {
 
 /**
  * Events related to system activity and handler execution.
+ * These are used primarily for observability and UI dashboards.
  */
 @Serializable
 sealed interface ActivityEvent {
+    /**
+     * A unique identifier for the execution context of the activity.
+     */
     val executionId: String
+    
+    /**
+     * The number of active workers at the time of the event.
+     */
     val activeWorkers: Int
+
+    /**
+     * The time when the activity occurred.
+     */
     @Serializable(with = InstantSerializer::class)
     val timestamp: Instant
 }
 
+/**
+ * Emitted when a handler starts processing an event.
+ *
+ * @property handler The name of the handler class.
+ * @property event The name of the event class.
+ * @property storyId The related story ID, if applicable.
+ */
 @Serializable
 data class HandlerStarted(
     val handler: String,
@@ -146,6 +190,15 @@ data class HandlerStarted(
     override val timestamp: Instant = Instant.now()
 ) : ActivityEvent
 
+/**
+ * Emitted when a handler finishes processing an event.
+ *
+ * @property handler The name of the handler class.
+ * @property event The name of the event class.
+ * @property storyId The related story ID, if applicable.
+ * @property elapsedMs The time taken to process the event in milliseconds.
+ * @property success True if the handler executed without throwing an exception.
+ */
 @Serializable
 data class HandlerFinished(
     val handler: String,
@@ -161,16 +214,23 @@ data class HandlerFinished(
 
 /**
  * An event that knows how to project itself into the [StoryRepository].
+ * This pattern localizes the mutation logic within the event itself.
  */
 interface ProjectableEvent : SlopEvent {
     /**
      * Projects the event's data into the repository.
+     *
+     * @param repository The destination story repository.
      */
     fun project(repository: StoryRepository)
 }
 
 /**
  * Triggered by the Scout when a new story is identified from an external source (e.g., Hacker News).
+ *
+ * @property id The unique identifier from the source.
+ * @property title The title of the story.
+ * @property url The URL of the story.
  */
 @Serializable
 data class StoryDiscovered(
@@ -187,6 +247,11 @@ data class StoryDiscovered(
 
 /**
  * Triggered by the Harvester after successfully extracting and cleaning text from a story's URL.
+ *
+ * @property storyId The target story's ID.
+ * @property cleanText The extracted text content, formatted as Markdown.
+ * @property errorText Any standard error output from the scraping process.
+ * @property exitCode The exit code from the scraping process.
  */
 @Serializable
 data class HarvestComplete(
@@ -208,11 +273,26 @@ data class HarvestComplete(
  * Categories for the identified content type.
  */
 enum class StoryCategory {
-    WRITING, PRODUCT, DEMO, SOURCE, VIDEO, UNKNOWN
+    /** Blog posts, articles, essays. */
+    WRITING, 
+    /** Commercial products, marketing materials. */
+    PRODUCT, 
+    /** Technical demos, prototypes. */
+    DEMO, 
+    /** Source code repositories or snippets. */
+    SOURCE, 
+    /** Video content. */
+    VIDEO, 
+    /** Content that does not fit into predefined categories. */
+    UNKNOWN
 }
 
 /**
  * Triggered by the Strategist after identifying the type of content.
+ *
+ * @property storyId The related story ID.
+ * @property category The identified category for the content.
+ * @property reasoning The explanation for why this category was assigned.
  */
 @Serializable
 data class StoryCategorized(
@@ -238,6 +318,8 @@ data class ContextRequest(
 
 /**
  * Triggered by the Memory domain in response to a context request.
+ *
+ * @property content The raw context text loaded from the user's personal context directory.
  */
 @Serializable
 data class ContextResponse(
@@ -246,14 +328,40 @@ data class ContextResponse(
     override val timestamp: Instant = Instant.now()
 ) : SlopEvent
 
+/**
+ * Represents how well a story aligns with the user's personal context.
+ */
 enum class Alignment {
-    ECHO_CHAMBER, OPPOSITE_VIEW, COMPLEMENTARY, ORTHOGONAL, IRRELEVANT
+    /** Restates existing views. */
+    ECHO_CHAMBER, 
+    /** Substantively challenges core philosophies. */
+    OPPOSITE_VIEW, 
+    /** Relates to interests and adds new, useful information. */
+    COMPLEMENTARY, 
+    /** High-quality but unrelated to personal themes. */
+    ORTHOGONAL, 
+    /** Low quality or pure noise. */
+    IRRELEVANT
 }
 
+/**
+ * Evaluates the level of hype or marketing fluff in the story.
+ */
 enum class HypeRisk {
-    LOW, MEDIUM, HIGH
+    /** Evidence-based and technical. */
+    LOW, 
+    /** Has interesting ideas but contains "future-speak". */
+    MEDIUM, 
+    /** Buzzword-driven, lacks substance. */
+    HIGH
 }
 
+/**
+ * A structured reasoning point explaining the analysis outcome.
+ *
+ * @property title The title or thematic area of the bullet point.
+ * @property description Detailed reasoning text.
+ */
 @Serializable
 data class ReasoningBullet(
     val title: String,
@@ -262,6 +370,16 @@ data class ReasoningBullet(
 
 /**
  * The final output of the Strategist (The Curator).
+ *
+ * @property storyId The analyzed story's ID.
+ * @property mms Mental Model Shift score (0-10).
+ * @property sa Strategic Actionability score (0-10).
+ * @property sd Signal Density score (0-10).
+ * @property d Durability score (0-10).
+ * @property alignment The degree to which it aligns with the user's personal context.
+ * @property hypeRisk The estimated hype factor of the content.
+ * @property sparringNote A concise engineering perspective on the value of reading the story.
+ * @property reasoningBullets Explanatory bullets detailing the analysis scores.
  */
 @Serializable
 data class AnalysisComplete(

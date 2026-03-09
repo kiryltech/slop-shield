@@ -7,9 +7,7 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.serialization.json.Json
 import org.mapdb.DBMaker
 import kotlin.reflect.KClass
@@ -19,6 +17,8 @@ private val logger = KotlinLogging.logger {}
 /**
  * The application context responsible for IoC, dependency injection, and lifecycle management.
  * It coordinates the initialization and shutdown of all infrastructure and domain services.
+ * 
+ * @property scope The coroutine scope used for all async operations in the app.
  */
 class AppContext(scope: CoroutineScope) : AutoCloseable {
 
@@ -28,6 +28,9 @@ class AppContext(scope: CoroutineScope) : AutoCloseable {
         }
     }
 
+    /**
+     * Persistent repository for storing processed stories.
+     */
     val repository = StoryRepository(
         DBMaker
             .fileDB(System.getProperty("slopshield.db.path", "slopshield.db"))
@@ -35,9 +38,25 @@ class AppContext(scope: CoroutineScope) : AutoCloseable {
             .closeOnJvmShutdown()
             .make()
     )
+    
+    /**
+     * The AI execution engine wrapper.
+     */
     val aiService = AIService()
+    
+    /**
+     * Main event stream for communication between domain components.
+     */
     val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
+    
+    /**
+     * Activity stream for tracking system and handler execution.
+     */
     val activityStream = MutableSharedFlow<ActivityEvent>(replay = 32)
+    
+    /**
+     * Registry holding recent system activities.
+     */
     val recentActivity = RecentActivityRegistry(scope, activityStream)
 
     private val registry: Map<KClass<*>, Any> = mapOf(
@@ -50,6 +69,9 @@ class AppContext(scope: CoroutineScope) : AutoCloseable {
 
     private val coordinator = EventCoordinator(scope, eventStream, activityStream, registry)
 
+    /**
+     * Starts the application context, initializing and wiring all components.
+     */
     fun start() {
         logger.info { "AppContext: Initializing SlopShield core services..." }
 
@@ -57,6 +79,9 @@ class AppContext(scope: CoroutineScope) : AutoCloseable {
         coordinator.start()
     }
 
+    /**
+     * Gracefully shuts down the application context and releases resources.
+     */
     override fun close() {
         logger.info { "🛡️ SlopShield is shutting down..." }
         logger.info { "AppContext: Shutting down services..." }
@@ -65,6 +90,4 @@ class AppContext(scope: CoroutineScope) : AutoCloseable {
         httpClient.close()
         repository.close()
     }
-
-
 }

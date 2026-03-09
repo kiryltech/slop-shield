@@ -9,7 +9,15 @@ import java.io.StringReader
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * The main application class for SlopShield.
+ * Responsible for bootstrapping the application context and keeping the process alive.
+ */
 class App {
+    /**
+     * Runs the application loop.
+     * Initializes [AppContext] and suspends execution until the coroutine scope is cancelled.
+     */
     fun run() = runBlocking {
         logger.info { "🛡️ SlopShield is warming up..." }
 
@@ -21,15 +29,24 @@ class App {
                 delay(1000)
             }
         }
-
     }
 }
 
+/**
+ * Entry point for the SlopShield application.
+ *
+ * @param array Command-line arguments passed to the application.
+ */
 fun main(array: Array<String>) {
     processArgs(array)
     App().run()
 }
 
+/**
+ * Processes command-line arguments and loads them into system properties.
+ *
+ * @param array Command-line arguments. Each argument is treated as a property line.
+ */
 private fun processArgs(array: Array<String>) {
     if (array.isEmpty()) {
         return
@@ -38,5 +55,4 @@ private fun processArgs(array: Array<String>) {
     logger.info { "Properties to load: \n$props" }
     System.getProperties()
         .load(StringReader(props))
-
 }

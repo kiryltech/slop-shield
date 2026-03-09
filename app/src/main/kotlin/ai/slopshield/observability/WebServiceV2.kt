@@ -31,7 +31,6 @@ import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.send
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.time.Duration
@@ -43,6 +42,13 @@ private val logger = KotlinLogging.logger {}
 /**
  * A modern, interactive Web UI (V2) backend.
  * Serves static UI assets and provides REST + WebSocket endpoints for real-time data.
+ *
+ * @property scope The coroutine scope for launching broadcast jobs.
+ * @property repository The underlying repository to serve the initial state of stories.
+ * @property recentActivity The registry for supplying recent historical events.
+ * @property eventStream The domain event stream to broadcast via WebSockets.
+ * @property activityStream The activity event stream to broadcast via WebSockets.
+ * @property port The port number for the embedded Netty server to listen on.
  */
 @SlopService
 class WebServiceV2(
@@ -57,6 +63,9 @@ class WebServiceV2(
     private var server: NettyApplicationEngine? = null
     private val sessions = Collections.newSetFromMap(ConcurrentHashMap<DefaultWebSocketServerSession, Boolean>())
 
+    /**
+     * Starts the embedded Netty server and begins observing streams to broadcast to WebSockets.
+     */
     override fun start() {
         logger.info { "WebServiceV2: Starting on port $port..." }
 
@@ -80,6 +89,11 @@ class WebServiceV2(
         }
     }
 
+    /**
+     * Broadcasts a JSON string to all active WebSocket sessions.
+     *
+     * @param json The serialized event to broadcast.
+     */
     private fun broadcast(json: String) {
         sessions.forEach { session ->
             try {
@@ -93,8 +107,8 @@ class WebServiceV2(
     }
 
     /**
-     * Configures the Ktor application module.
-     * Extracted for testability.
+     * Configures the Ktor application module, setting up WebSockets, ContentNegotiation, and Routing.
+     * Extracted for testability and clarity.
      */
     fun Application.configureModule() {
         install(WebSockets) {
@@ -146,6 +160,9 @@ class WebServiceV2(
         }
     }
 
+    /**
+     * Gracefully stops the web server.
+     */
     override fun stop() {
         logger.info { "WebServiceV2: Stopping..." }
         server?.stop(1000, 5000)

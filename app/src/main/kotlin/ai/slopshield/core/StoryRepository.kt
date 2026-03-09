@@ -5,13 +5,22 @@ import kotlinx.serialization.Serializable
 import org.mapdb.DB
 import org.mapdb.Serializer
 import org.mapdb.serializer.GroupSerializer
-import java.io.Serializable as JavaSerializable
 import java.util.concurrent.ConcurrentMap
+import java.io.Serializable as JavaSerializable
 
 private val logger = KotlinLogging.logger {}
 
 /**
  * Data model for a processed story.
+ * Represents an aggregated view of all information extracted for a specific URL.
+ *
+ * @property id A unique identifier for the story.
+ * @property title The original title of the story.
+ * @property url The original URL of the story.
+ * @property cleanText Extracted clean text content, stripped of formatting.
+ * @property category The determined category/type of content.
+ * @property categoryReasoning The rationale behind the assigned category.
+ * @property analysis The final detailed analysis if the story is deemed high signal.
  */
 @Serializable
 data class Story(
@@ -27,6 +36,9 @@ data class Story(
 
 /**
  * Repository for managing persistent storage of stories using MapDB.
+ * Provides thread-safe CRUD operations.
+ *
+ * @property db The underlying MapDB instance used for storage.
  */
 class StoryRepository(
     private val db: DB
@@ -41,11 +53,16 @@ class StoryRepository(
 
     /**
      * Retrieves a story by its ID.
+     *
+     * @param id The unique identifier of the story.
+     * @return The found [Story] or null if it does not exist.
      */
     fun get(id: String): Story? = stories[id]
 
     /**
      * Persists or updates a story.
+     *
+     * @param story The [Story] to be saved.
      */
     fun upsert(story: Story) {
         try {
@@ -60,6 +77,9 @@ class StoryRepository(
     /**
      * Updates an existing story using a transformation function.
      * Useful for surgical updates (e.g., just adding cleanText).
+     *
+     * @param id The ID of the story to update.
+     * @param transform A function that applies the changes to the existing story.
      */
     fun update(id: String, transform: (Story) -> Story) {
         try {
@@ -78,9 +98,14 @@ class StoryRepository(
 
     /**
      * Returns all stories as a Sequence for scalability.
+     *
+     * @return A sequence of all stored [Story] instances.
      */
     fun getAll(): Sequence<Story> = stories.values.asSequence()
 
+    /**
+     * Closes the underlying database, releasing resources.
+     */
     fun close() {
         db.close()
     }

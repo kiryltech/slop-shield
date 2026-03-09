@@ -22,10 +22,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Mock implementation of AIService for testing.
+ * A mock implementation of [AIService] to avoid invoking real AI inference during testing.
+ * Captures the input to verify the prompt context was assembled properly.
  */
 class MockAIService : AIService(maxParallelTasks = 1) {
+    /** The predefined result that will be returned upon process execution. */
     var mockResult: AIResult = AIResult("", "", 0)
+    /** The input string that was captured during the process call. */
     var capturedInput: String = ""
 
     override suspend fun process(prompt: String, input: String, timeoutSeconds: Long): AIResult {
@@ -34,9 +37,16 @@ class MockAIService : AIService(maxParallelTasks = 1) {
     }
 }
 
+/**
+ * Tests for the [Harvester] domain service, verifying web scraping and AI text extraction logic.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 class HarvesterTest {
 
+    /**
+     * Verifies that discovering a story correctly triggers an HTTP fetch, pipes the HTML
+     * into the AI service, and emits a [HarvestComplete] event with the cleaned text.
+     */
     @Test
     fun `test harvester reacts to StoryDiscovered and emits HarvestComplete`() = runTest {
         val storyId = "123"

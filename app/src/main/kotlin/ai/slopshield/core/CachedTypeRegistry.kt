@@ -38,6 +38,13 @@ object CachedTypeRegistry {
         }
     }
 
+    /**
+     * Recursively searches for the specified generic interface within the class hierarchy.
+     *
+     * @param target The class to inspect.
+     * @param search The target generic interface class to find.
+     * @return The parameterized type of the found interface, or null if not found.
+     */
     private fun findGenericInterface(target: Class<*>, search: Class<*>): java.lang.reflect.Type? {
         return target.genericInterfaces.find { 
             val rawType = (it as? ParameterizedType)?.rawType ?: it

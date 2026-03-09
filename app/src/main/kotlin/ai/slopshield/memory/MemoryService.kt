@@ -16,6 +16,10 @@ private val logger = KotlinLogging.logger {}
 /**
  * The Memory domain service.
  * Ingests personal context from a local directory and provides it as a pre-prompt bundle.
+ * This personal context is used to calibrate AI analysis.
+ *
+ * @property collector The flow collector for emitting [ContextResponse] events.
+ * @property contextPath The file system path where personal context documents are stored.
  */
 @SlopListener
 @SlopService
@@ -27,11 +31,19 @@ class MemoryService(
     private val allowedExtensions = setOf("md", "txt", "xml")
     private var cachedContext: String = ""
 
+    /**
+     * Starts the memory service by proactively loading the personal context.
+     */
     override fun start() {
         logger.info { "MemoryService: Initializing personal context from $contextPath..." }
         cachedContext = loadContext()
     }
 
+    /**
+     * Responds to context requests by emitting the currently cached context bundle.
+     *
+     * @param event The [ContextRequest] event triggering the response.
+     */
     override suspend fun onEvent(event: ContextRequest) {
         collector.emit(ContextResponse(cachedContext))
     }
@@ -39,6 +51,8 @@ class MemoryService(
     /**
      * Loads and aggregates context from the configured directory.
      * CONTEXT.md is prioritized and included first.
+     *
+     * @return The aggregated text content of all context files.
      */
     fun loadContext(): String {
         val dir = File(contextPath)

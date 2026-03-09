@@ -10,23 +10,35 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+/**
+ * Tests for the [HarvestDumper] debug component.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 class HarvestDumperTest {
 
     private val testDumpPath = "/tmp/slop-shield-test-${System.currentTimeMillis()}"
     private val dumpDir = File(testDumpPath)
 
+    /**
+     * Configures the system property to point to the test directory.
+     */
     @BeforeTest
     fun setup() {
         System.setProperty("slopshield.dump.path", testDumpPath)
     }
 
+    /**
+     * Cleans up the dumped files.
+     */
     @AfterTest
     fun tearDown() {
         dumpDir.deleteRecursively()
         System.clearProperty("slopshield.dump.path")
     }
 
+    /**
+     * Verifies that the dumper writes both stdout (clean text) and stderr (error text) to disk.
+     */
     @Test
     fun `test dumper writes clean and error text to disk`() = runTest {
         val dumper = HarvestDumper()
@@ -48,6 +60,9 @@ class HarvestDumperTest {
         assertEquals("Some Error", stderrFile.readText())
     }
 
+    /**
+     * Verifies that the dumper does not create an error log file if the error text is blank.
+     */
     @Test
     fun `test dumper skips stderr if empty`() = runTest {
         val dumper = HarvestDumper()

@@ -20,6 +20,14 @@ import java.time.Duration
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * Data model for a story received from Hacker News API.
+ *
+ * @property id The Hacker News item ID.
+ * @property title The title of the story.
+ * @property url The external URL to the story content.
+ * @property type The type of item (e.g., "story").
+ */
 @Serializable
 data class HnStory(
     val id: Long,
@@ -31,6 +39,13 @@ data class HnStory(
 /**
  * The Scout domain service.
  * Periodically polls the HN Firebase API for top stories.
+ *
+ * @property scope The coroutine scope used for polling loops.
+ * @property client The Ktor HTTP client to use for network calls.
+ * @property collector The flow collector used to emit discovery events.
+ * @property repository The underlying repository to check if a story has already been discovered.
+ * @property pollInterval The duration to wait between polling loops.
+ * @property limit The maximum number of top stories to examine per poll.
  */
 @SlopService
 class Scout(
@@ -42,6 +57,9 @@ class Scout(
     private val limit: Int = Integer.getInteger("slopshield.ai.scout.limit", 30)
 ) : SlopServiceLifecycle {
 
+    /**
+     * Starts the continuous polling loop for top stories.
+     */
     override fun start() {
         scope.launch {
             while (isActive) {
@@ -59,6 +77,9 @@ class Scout(
         }
     }
 
+    /**
+     * Executes a single pass to fetch top stories from HN and emits [StoryDiscovered] events.
+     */
     internal suspend fun pollTopStories() {
         logger.debug { "Scout: Polling Hacker News for top stories..." }
         val topIds: List<Long> = client.get("https://hacker-news.firebaseio.com/v0/topstories.json").body()
@@ -87,7 +108,12 @@ class Scout(
         }
     }
 
-
+    /**
+     * Fetches detailed information for a specific HN story ID.
+     *
+     * @param id The Hacker News story ID to fetch.
+     * @return An [HnStory] object if successful, or null on error.
+     */
     private suspend fun fetchStory(id: Long): HnStory? {
         return try {
             client.get("https://hacker-news.firebaseio.com/v0/item/$id.json").body()

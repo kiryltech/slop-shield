@@ -14,6 +14,12 @@ import kotlinx.serialization.json.Json
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * The expected JSON format returned from the AI categorization prompt.
+ *
+ * @property category The determined string category (e.g., "WRITING", "PRODUCT").
+ * @property reasoning A brief explanation of why this category was chosen.
+ */
 @Serializable
 data class CategorizationResult(
     val category: String,
@@ -24,6 +30,9 @@ data class CategorizationResult(
  * The Categorizer domain service.
  * Listens for [HarvestComplete] events and uses the [AIService] to classify
  * stories into high-level categories (WRITING, PRODUCT, DEMO, etc.).
+ *
+ * @property collector The flow collector for emitting [StoryCategorized] events.
+ * @property aiService The AI execution engine wrapper for running the categorization prompt.
  */
 @SlopListener
 class Categorizer(
@@ -44,14 +53,31 @@ class Categorizer(
         Format: {"category": "CATEGORY_NAME", "reasoning": "brief explanation"}
     """.trimIndent()
 
+    /**
+     * Determines whether this handler can process the given event.
+     * Only processes successfully harvested stories (exitCode == 0).
+     *
+     * @param event The [HarvestComplete] event.
+     * @return True if the event should be processed.
+     */
     override fun canHandle(event: HarvestComplete): Boolean {
         return event.exitCode == 0
     }
 
+    /**
+     * Triggers the categorization logic.
+     *
+     * @param event The successfully harvested story data.
+     */
     override suspend fun onEvent(event: HarvestComplete) {
         categorize(event)
     }
 
+    /**
+     * Categorizes the scraped content using an AI prompt and emits a [StoryCategorized] event.
+     *
+     * @param event The [HarvestComplete] event containing the cleaned text.
+     */
     private suspend fun categorize(event: HarvestComplete) {
         logger.info { "Categorizer: Analyzing story ${event.storyId}..." }
         
@@ -83,6 +109,12 @@ class Categorizer(
         }
     }
 
+    /**
+     * Sanitizes AI JSON output by removing markdown code blocks and leaving only the JSON portion.
+     *
+     * @param input The raw output from the AI.
+     * @return The cleaned JSON string.
+     */
     private fun sanitizeJson(input: String): String {
         val jsonRegex = """(?s)\{.*\}""".toRegex()
         return jsonRegex.find(input)?.value ?: input

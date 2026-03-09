@@ -17,9 +17,18 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+/**
+ * Tests for the [Categorizer] domain service.
+ * Ensures that categorization logic processes successfully harvested stories,
+ * handles bad outputs from the AI correctly, and emits valid categorization events.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 class CategorizerTest {
 
+    /**
+     * Verifies the standard successful flow: the AI returns a valid category,
+     * and the Categorizer correctly emits a [StoryCategorized] event.
+     */
     @Test
     fun `test categorizer reacts to HarvestComplete and emits StoryCategorized`() = runTest {
         val storyId = "123"
@@ -58,6 +67,10 @@ class CategorizerTest {
         assertEquals("It looks like an article.", categorizedEvents[0].reasoning)
     }
 
+    /**
+     * Verifies that if the AI returns a category string not present in the
+     * [StoryCategory] enum, it defaults to [StoryCategory.UNKNOWN] gracefully.
+     */
     @Test
     fun `test categorizer handles unknown categories gracefully`() = runTest {
         val storyId = "456"
@@ -94,6 +107,10 @@ class CategorizerTest {
         assertEquals(StoryCategory.UNKNOWN, categorizedEvents[0].category)
     }
 
+    /**
+     * Verifies that JSON output wrapped in markdown code blocks (e.g., ```json ... ```)
+     * is correctly sanitized before parsing.
+     */
     @Test
     fun `test categorizer sanitizes markdown wrapped json`() = runTest {
         val storyId = "789"
@@ -135,6 +152,9 @@ class CategorizerTest {
         assertEquals("Wrapped in code blocks.", categorizedEvents[0].reasoning)
     }
 
+    /**
+     * Verifies that a valid SOURCE categorization produces the correct enum type.
+     */
     @Test
     fun `test categorizer identifies source category`() = runTest {
         val storyId = "abc"

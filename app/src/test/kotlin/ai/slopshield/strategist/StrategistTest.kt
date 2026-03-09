@@ -14,6 +14,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+/**
+ * Tests for the [Strategist] domain service.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 class StrategistTest {
 
@@ -21,6 +24,9 @@ class StrategistTest {
     private lateinit var aiService: MockAIService
     private lateinit var eventStream: MutableSharedFlow<SlopEvent>
 
+    /**
+     * Initializes the repository and event stream for testing.
+     */
     @BeforeTest
     fun setup() {
         val db = DBMaker.memoryDB().make()
@@ -28,11 +34,17 @@ class StrategistTest {
         eventStream = MutableSharedFlow(replay = 64)
     }
 
+    /**
+     * Cleans up repository resources.
+     */
     @AfterTest
     fun tearDown() {
         repository.close()
     }
 
+    /**
+     * Verifies that the Strategist performs deep analysis for valid categories and emits a correct event.
+     */
     @Test
     fun `test strategist performs deep analysis and emits event`() = runTest {
         // Setup story
@@ -78,6 +90,9 @@ class StrategistTest {
         strategist.stop()
     }
 
+    /**
+     * Verifies that the Strategist skips deep analysis for low-signal categories.
+     */
     @Test
     fun `test strategist skips low-signal categories`() = runTest {
         aiService = MockAIService(AIResult("{}", "", 0))

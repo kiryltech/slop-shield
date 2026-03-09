@@ -17,22 +17,34 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+/**
+ * Tests for the [MemoryService] checking file loading and context provisioning.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 class MemoryServiceTest {
 
     private val testContextPath = "/tmp/slop-shield-context-test"
     private val contextDir = File(testContextPath)
 
+    /**
+     * Creates a temporary directory for context files.
+     */
     @BeforeTest
     fun setup() {
         contextDir.mkdirs()
     }
 
+    /**
+     * Cleans up the temporary context directory.
+     */
     @AfterTest
     fun tearDown() {
         contextDir.deleteRecursively()
     }
 
+    /**
+     * Verifies that `loadContext` aggregates files correctly and prioritizes `CONTEXT.md`.
+     */
     @Test
     fun `test loadContext prioritizes CONTEXT md and includes other files`() {
         File(contextDir, "CONTEXT.md").writeText("Global Instructions")
@@ -57,6 +69,9 @@ class MemoryServiceTest {
         assertTrue(instructionIndex < articleIndex, "CONTEXT.md should come before other writings")
     }
 
+    /**
+     * Verifies that the service emits a context response upon receiving a context request.
+     */
     @Test
     fun `test reacts to ContextRequest`() = runTest {
         File(contextDir, "CONTEXT.md").writeText("Instructions")

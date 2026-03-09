@@ -15,8 +15,14 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+/**
+ * Tests for the [WebServiceV2] class to ensure routing and API behavior work as expected.
+ */
 class WebServiceV2Test {
 
+    /**
+     * Verifies that the base path ("/") correctly serves the dashboard UI.
+     */
     @Test
     fun `test dashboard loads`() = testApplication {
         val db = DBMaker.memoryDB().make()
@@ -37,6 +43,9 @@ class WebServiceV2Test {
         assertTrue(response.bodyAsText().contains("SlopShield Dashboard"))
     }
 
+    /**
+     * Verifies that the REST API correctly returns the stored stories.
+     */
     @Test
     fun `test api returns stories`() = testApplication {
         val db = DBMaker.memoryDB().make()

@@ -1,6 +1,18 @@
 package ai.slopshield.strategist
 
-import ai.slopshield.core.*
+import ai.slopshield.core.AIService
+import ai.slopshield.core.Alignment
+import ai.slopshield.core.AnalysisComplete
+import ai.slopshield.core.ContextRequest
+import ai.slopshield.core.ContextResponse
+import ai.slopshield.core.HypeRisk
+import ai.slopshield.core.ReasoningBullet
+import ai.slopshield.core.SlopEvent
+import ai.slopshield.core.SlopService
+import ai.slopshield.core.SlopServiceLifecycle
+import ai.slopshield.core.StoryCategorized
+import ai.slopshield.core.StoryCategory
+import ai.slopshield.core.StoryRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.FlowCollector
@@ -11,6 +23,18 @@ import kotlinx.serialization.json.Json
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * The structured result of a deep AI analysis.
+ *
+ * @property mms Mental Model Shift score (0-10).
+ * @property sa Strategic Actionability score (0-10).
+ * @property sd Signal Density score (0-10).
+ * @property d Durability score (0-10).
+ * @property alignment The story's alignment with the personal context.
+ * @property hypeRisk The calculated hype risk level.
+ * @property sparringNote A cynical/pragmatic note on why the story is relevant.
+ * @property reasoningBullets The detailed breakdown of why the scores were given.
+ */
 @Serializable
 data class DeepAnalysisResult(
     val mms: Int,
@@ -27,6 +51,12 @@ data class DeepAnalysisResult(
  * The Strategist (The Curator).
  * Performs deep SECV analysis on stories that have been categorized as high-signal.
  * It uses the personal context from MemoryService to calibrate its judgment.
+ *
+ * @property scope The coroutine scope to launch background analysis tasks.
+ * @property eventStream The shared domain event stream to collect responses and triggers.
+ * @property collector The flow collector to emit analysis completion events.
+ * @property aiService The AI execution service for running the deep analysis prompts.
+ * @property repository The repository to look up story content.
  */
 @SlopService
 class Strategist(
@@ -40,6 +70,9 @@ class Strategist(
     private var currentContext: String = ""
     private var analysisJob: kotlinx.coroutines.Job? = null
 
+    /**
+     * Generates the system instructions for the AI curator.
+     */
     private fun generateInstructions(): String = """
         You are "The Curator", a highly opinionated and experienced Software Engineer.
         Your goal is to evaluate the technical story provided in the input through the lens of my PERSONAL CONTEXT (also provided in the input).
@@ -70,6 +103,9 @@ class Strategist(
         Format: {"mms": 0, "sa": 0, "sd": 0, "d": 0, "alignment": "ECHO_CHAMBER", "hypeRisk": "LOW", "sparringNote": "...", "reasoningBullets": [{"title": "...", "description": "..."}]}
     """.trimIndent()
 
+    /**
+     * Prepares the data bundle with personal context and the target story text.
+     */
     private fun generateData(context: String, title: String, url: String, content: String): String = """
         --- PERSONAL CONTEXT (My Source of Truth) ---
         $context
@@ -83,6 +119,9 @@ class Strategist(
         --- END STORY CONTENT ---
     """.trimIndent()
 
+    /**
+     * Starts the Strategist's analysis loop, listening for personal context updates and categorized stories.
+     */
     override fun start() {
         logger.info { "Strategist: Starting Curator analysis engine..." }
         
@@ -109,15 +148,30 @@ class Strategist(
         }
     }
 
+    /**
+     * Cancels the active analysis loop.
+     */
     override fun stop() {
         logger.info { "Strategist: Stopping Curator analysis engine..." }
         analysisJob?.cancel()
     }
 
+    /**
+     * Determines whether a story requires deep analysis based on its assigned category.
+     *
+     * @param event The categorization event.
+     * @return True if the story should be analyzed (e.g., WRITING, DEMO, VIDEO).
+     */
     private fun shouldAnalyze(event: StoryCategorized): Boolean {
         return event.category == StoryCategory.WRITING || event.category == StoryCategory.DEMO || event.category == StoryCategory.VIDEO
     }
 
+    /**
+     * Executes the deep analysis using the configured AI service.
+     * Emits an [AnalysisComplete] event upon successful evaluation.
+     *
+     * @param event The categorization event that triggered this analysis.
+     */
     private suspend fun analyze(event: StoryCategorized) {
         val story = repository.get(event.storyId) ?: return
         if (story.cleanText.isNullOrBlank()) {
@@ -163,6 +217,12 @@ class Strategist(
         }
     }
 
+    /**
+     * Cleans up the AI response to extract only the valid JSON payload.
+     *
+     * @param input The raw output from the AI.
+     * @return A sanitized JSON string.
+     */
     private fun sanitizeJson(input: String): String {
         val jsonRegex = """(?s)\{.*\}""".toRegex()
         return jsonRegex.find(input)?.value ?: input

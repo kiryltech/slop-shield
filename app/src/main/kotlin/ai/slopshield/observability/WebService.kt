@@ -25,6 +25,10 @@ private val logger = KotlinLogging.logger {}
 
 /**
  * A minimalist Web UI to view the contents of the StoryRepository.
+ * This is the V1 interface that generates server-side HTML.
+ *
+ * @property repository The underlying repository containing processed stories.
+ * @property port The port number on which the Web UI will run. Defaults to 8080.
  */
 @SlopService
 class WebService(
@@ -33,6 +37,9 @@ class WebService(
 ) : SlopServiceLifecycle {
     private var server: NettyApplicationEngine? = null
 
+    /**
+     * Starts the embedded Netty server to serve the HTML Dashboard.
+     */
     override fun start() {
         logger.info { "WebService: Starting Web UI on port $port..." }
         
@@ -130,6 +137,9 @@ class WebService(
         }.start(wait = false)
     }
 
+    /**
+     * Gracefully stops the web server.
+     */
     override fun stop() {
         logger.info { "WebService: Stopping Web UI..." }
         server?.stop(1000, 5000)

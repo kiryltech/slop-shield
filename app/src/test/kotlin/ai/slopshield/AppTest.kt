@@ -6,7 +6,14 @@ package ai.slopshield
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 
+/**
+ * Basic initialization test to ensure the primary [App] component can be instantiated.
+ */
 class AppTest {
+    
+    /**
+     * Verifies that the [App] class can be created without throwing an exception.
+     */
     @Test fun appCanBeCreated() {
         val classUnderTest = App()
         assertNotNull(classUnderTest, "app should be creatable")

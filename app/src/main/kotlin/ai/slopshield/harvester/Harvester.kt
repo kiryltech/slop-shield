@@ -7,10 +7,10 @@ import ai.slopshield.core.SlopHandler
 import ai.slopshield.core.SlopListener
 import ai.slopshield.core.StoryDiscovered
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.client.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
+import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.flow.FlowCollector
 import java.net.URI
 
@@ -22,7 +22,12 @@ private const val scraperPrompt =
 
 /**
  * The Harvester domain service.
- * Fetches webpage content and pipes it into AIService for extraction.
+ * Fetches webpage content and pipes it into AIService for extraction and cleanup.
+ * It listens for [StoryDiscovered] events and emits [HarvestComplete] events.
+ *
+ * @property httpClient The Ktor HTTP client used to fetch content.
+ * @property collector The flow collector for emitting new domain events.
+ * @property aiService The AI service used to clean up scraped HTML into Markdown.
  */
 @SlopListener
 class Harvester(
@@ -31,10 +36,20 @@ class Harvester(
     private val aiService: AIService
 ) : SlopHandler<StoryDiscovered> {
 
+    /**
+     * Handles the [StoryDiscovered] event by initiating the harvest process.
+     *
+     * @param event The event containing the story's URL and metadata.
+     */
     override suspend fun onEvent(event: StoryDiscovered) {
         harvest(event)
     }
 
+    /**
+     * Fetches the content from the provided URL and uses AI to clean it up.
+     *
+     * @param event The [StoryDiscovered] event providing context for harvesting.
+     */
     private suspend fun harvest(event: StoryDiscovered) {
         logger.info { "Harvester: Fetching and scraping story: ${event.title} (${event.url})" }
         
@@ -68,6 +83,12 @@ class Harvester(
         }
     }
 
+    /**
+     * Validates that a given string is a valid HTTP or HTTPS URL.
+     *
+     * @param urlString The string representation of the URL.
+     * @throws IllegalArgumentException if the URL protocol is not valid.
+     */
     private fun validateUrl(urlString: String) {
         val url = URI.create(urlString).toURL()
         if (url.protocol != "http" && url.protocol != "https") {

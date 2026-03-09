@@ -22,6 +22,11 @@ private val logger = KotlinLogging.logger {}
 /**
  * Discovers and orchestrates all SlopHandlers and SlopServices.
  * It uses reflection to find annotated components and manages their lifecycle.
+ *
+ * @property scope The coroutine scope used for launching background jobs.
+ * @property eventStream The main stream of domain events.
+ * @property activityStream The stream of system activity events.
+ * @property registry A map holding pre-instantiated dependencies for injection.
  */
 class EventCoordinator(
     private val scope: CoroutineScope,
@@ -34,6 +39,11 @@ class EventCoordinator(
     private var dispatchJob: kotlinx.coroutines.Job? = null
     private val activeWorkersCounter = AtomicInteger(0)
 
+    /**
+     * Scans the specified package for annotated components and starts them.
+     *
+     * @param packageName The base package name to scan. Defaults to "ai.slopshield".
+     */
     fun start(packageName: String = "ai.slopshield") {
         logger.info { "EventCoordinator: Scanning for components in $packageName..." }
 
@@ -68,12 +78,20 @@ class EventCoordinator(
         }
     }
 
+    /**
+     * Stops the event dispatch loop and shuts down all registered services.
+     */
     fun stop() {
         logger.info { "EventCoordinator: Stopping all services..." }
         dispatchJob?.cancel()
         services.forEach { it.stop() }
     }
 
+    /**
+     * Dispatches an incoming event to all applicable handlers.
+     *
+     * @param event The event to be dispatched.
+     */
     @Suppress("UNCHECKED_CAST")
     private fun dispatch(event: SlopEvent) {
         handlers.filter { it.eventType.isInstance(event) }
@@ -121,6 +139,12 @@ class EventCoordinator(
             }
     }
 
+    /**
+     * Attempts to dynamically extract a story ID from an event using reflection.
+     *
+     * @param event The event to inspect.
+     * @return The story ID as a string, or null if it cannot be found.
+     */
     private fun getStoryId(event: SlopEvent): String? {
         // Reflection-based way to get storyId from event if it exists
         return try {
@@ -131,6 +155,12 @@ class EventCoordinator(
         }
     }
 
+    /**
+     * Evaluates if a component should be registered based on its conditional annotations.
+     *
+     * @param clazz The class to evaluate.
+     * @return True if the component should be registered, false otherwise.
+     */
     private fun shouldRegister(clazz: Class<*>): Boolean {
         val enabledAnnotation = clazz.getAnnotation(Enabled::class.java)
             ?: return true
@@ -151,6 +181,13 @@ class EventCoordinator(
         }
     }
 
+    /**
+     * Instantiates a class and resolves its constructor dependencies.
+     *
+     * @param clazz The Kotlin class to instantiate.
+     * @return The instantiated object.
+     * @throws IllegalArgumentException if a required dependency is missing.
+     */
     private fun instantiate(clazz: KClass<*>): Any {
         // First check if the class or its superclass is in the registry
         val existing = registry.entries.find { (type, _) ->

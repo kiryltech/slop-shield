@@ -16,31 +16,52 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Functional test for EventCoordinator using real reflection.
+ * Functional test for [EventCoordinator] verifying component discovery and lifecycle management.
+ * Uses real reflection to scan for test components.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class EventCoordinatorTest {
 
+    /**
+     * A test handler used to verify event dispatching.
+     */
     @SlopListener
     class GlobalTestHandler : SlopHandler<StoryDiscovered> {
         companion object {
+            /** The last event processed by this handler. */
             var lastEvent: StoryDiscovered? = null
         }
+        
+        /**
+         * Records the received event.
+         */
         override suspend fun onEvent(event: StoryDiscovered) {
             lastEvent = event
         }
     }
 
+    /**
+     * A test service used to verify component lifecycle (start/stop).
+     */
     @SlopService
     class GlobalTestService : SlopServiceLifecycle {
         companion object {
+            /** Flag indicating if the service was started. */
             var started = false
+            /** Flag indicating if the service was stopped. */
             var stopped = false
         }
+        
+        /** Marks the service as started. */
         override fun start() { started = true }
+        
+        /** Marks the service as stopped. */
         override fun stop() { stopped = true }
     }
 
+    /**
+     * Resets the static state before each test.
+     */
     @BeforeTest
     fun setup() {
         GlobalTestHandler.lastEvent = null
@@ -48,6 +69,10 @@ class EventCoordinatorTest {
         GlobalTestService.stopped = false
     }
 
+    /**
+     * Verifies that the coordinator correctly discovers components, starts services,
+     * routes events, and stops services upon shutdown.
+     */
     @Test
     fun `test component discovery and lifecycle`() = runTest {
         val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
@@ -84,6 +109,9 @@ class EventCoordinatorTest {
         assertTrue(GlobalTestService.stopped, "Service should have been stopped")
     }
 
+    /**
+     * Verifies the reflection-based instantiation logic for dependency injection.
+     */
     @Test
     fun `test reflection instantiation with dependencies`() {
         // Internal test for the instantiate method logic

@@ -7,12 +7,14 @@ import ai.slopshield.core.SlopHandler
 import ai.slopshield.core.SlopListener
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.File
-import java.lang.ProcessHandle
 
 private val logger = KotlinLogging.logger {}
 
 /**
  * A debug component that dumps harvested story content to disk.
+ * This is primarily used for troubleshooting scraping issues and observing the 
+ * raw input before it gets passed to the AI analysis.
+ * Enabled only when debug mode is active.
  */
 @SlopListener
 @Enabled(DebugEnabledCondition::class)
@@ -29,6 +31,12 @@ class HarvestDumper : SlopHandler<HarvestComplete> {
         logger.info { "HarvestDumper: Debug dumper target directory: ${dumpDir.absolutePath}" }
     }
 
+    /**
+     * Handles the [HarvestComplete] event by writing the cleaned text and any
+     * error logs to the file system.
+     *
+     * @param event The event containing the harvested text.
+     */
     override suspend fun onEvent(event: HarvestComplete) {
         try {
             val baseFile = File(dumpDir, event.storyId)
