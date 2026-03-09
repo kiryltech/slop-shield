@@ -24,7 +24,7 @@ function createStoryCard(story) {
     const categoryClass = (story.category || 'unknown').toLowerCase();
     const isActive = selectedStoryId === story.id;
     const alignmentLabel = analysis ? analysis.alignment.replace('_', ' ') : 'PENDING';
-    const alignmentClass = analysis ? analysis.alignment.toLowerCase() : 'pending';
+    const alignmentClass = analysis ? 'alignment-' + analysis.alignment.toLowerCase() : 'alignment-pending';
 
     return `
         <div onclick="selectStory('${story.id}')" class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border-l-4 ${getBorderColor(categoryClass)} overflow-hidden hover:shadow-md transition-shadow group cursor-pointer ${isActive ? 'active ring-2 ring-primary bg-primary/5' : ''}">
@@ -37,7 +37,7 @@ function createStoryCard(story) {
                     <div class="flex items-start justify-between mb-2">
                         <div>
                             <div class="flex items-center gap-2 mb-1">
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded alignment-${alignmentClass}">${alignmentLabel}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${alignmentClass}">${alignmentLabel}</span>
                                 <span class="text-[10px] font-bold px-2 py-0.5 rounded ${getHypeBg(analysis)}">${analysis ? 'HYPE: ' + analysis.hypeRisk : 'WAITING'}</span>
                             </div>
                             <h3 class="font-bold text-lg group-hover:text-primary transition-colors">${story.title}</h3>

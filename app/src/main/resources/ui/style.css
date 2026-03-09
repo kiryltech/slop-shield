@@ -16,4 +16,6 @@
 .alignment-opposite_view { background-color: #d1fae5; color: #047857; }
 .alignment-echo_chamber { background-color: #fef3c7; color: #b45309; }
 .alignment-complementary { background-color: #dbeafe; color: #1d4ed8; }
+.alignment-orthogonal { background-color: #f3e8ff; color: #7e22ce; }
+.alignment-irrelevant { background-color: #f1f5f9; color: #475569; }
 .alignment-pending { background-color: #f1f5f9; color: #64748b; }

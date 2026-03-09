@@ -212,7 +212,7 @@ data class ContextResponse(
 ) : SlopEvent
 
 enum class Alignment {
-    ECHO_CHAMBER, OPPOSITE_VIEW, COMPLEMENTARY
+    ECHO_CHAMBER, OPPOSITE_VIEW, COMPLEMENTARY, ORTHOGONAL, IRRELEVANT
 }
 
 enum class HypeRisk {

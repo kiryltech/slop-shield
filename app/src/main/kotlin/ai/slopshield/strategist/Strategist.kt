@@ -49,9 +49,17 @@ class Strategist(
         - SD (Signal Density): Is it high-information "meat" or low-signal "fluff"?
         - D (Durability): Will this still be valuable in 2 years?
 
-        Identify:
-        - Alignment: Is it an ECHO_CHAMBER (restates my views), OPPOSITE_VIEW (challenges me), or COMPLEMENTARY?
-        - HypeRisk: Is it LOW, MEDIUM, or HIGH risk of being empty hype?
+        Identify Alignment relative to my PERSONAL CONTEXT:
+        - ECHO_CHAMBER: Restates or heavily validates my existing views/writings.
+        - OPPOSITE_VIEW: Substantively challenges my core philosophies or conclusions.
+        - COMPLEMENTARY: Directly relates to my interests and adds new, relevant information or a useful bridge.
+        - ORTHOGONAL: Technical and high-quality, but completely unrelated to the themes in my personal context.
+        - IRRELEVANT: Low quality, non-technical, or pure noise that should be ignored.
+
+        Identify HypeRisk:
+        - LOW: Evidence-based, technical substance, peer-reviewed or verifiable data, no marketing fluff.
+        - MEDIUM: Interesting ideas but contains "future-speak", corporate bias, or lacks deep technical implementation details.
+        - HIGH: Pure buzzword-driven content, visionary-only manifestos without substance, or clearly AI-generated "slop" designed for SEO.
 
         Provide a "Sparring Note": A concise, direct, and slightly cynical engineering perspective on why I should (or should not) read this, specifically contrasting it with my PERSONAL CONTEXT.
 
