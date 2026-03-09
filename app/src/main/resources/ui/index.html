@@ -44,20 +44,20 @@
         <nav class="flex-1 px-3 space-y-1">
             <div class="mb-4">
                 <p class="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Navigation</p>
-                <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-slate-900 dark:text-primary font-medium" href="#">
+                <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-slate-900 dark:text-primary font-medium" href="#" id="nav-inbox">
                     <span class="material-symbols-outlined text-xl">inbox</span>
                     <span class="text-sm">Inbox</span>
                     <span class="ml-auto bg-primary text-background-dark text-[10px] px-1.5 py-0.5 rounded-full font-bold" id="inbox-count">0</span>
                 </a>
-                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-primary/5 transition-colors" href="#">
+                <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-primary/5 transition-colors" href="#" id="nav-high-signal">
                     <span class="material-symbols-outlined text-xl">signal_cellular_alt</span>
                     <span class="text-sm">High Signal (&gt;7.5)</span>
                 </a>
-                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-primary/5 transition-colors" href="#">
+                <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-primary/5 transition-colors" href="#" id="nav-opposite">
                     <span class="material-symbols-outlined text-xl">compare_arrows</span>
                     <span class="text-sm">Opposite Views</span>
                 </a>
-                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-primary/5 transition-colors" href="#">
+                <a class="nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-primary/5 transition-colors" href="#" id="nav-noise">
                     <span class="material-symbols-outlined text-xl">delete</span>
                     <span class="text-sm">Noise Bin</span>
                 </a>
@@ -96,17 +96,15 @@
     <main class="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark/50">
         <header class="h-16 border-b border-primary/10 flex items-center justify-between px-6 bg-white/50 dark:bg-background-dark/50 backdrop-blur-sm sticky top-0 z-10">
             <div class="flex items-center gap-4">
-                <h2 class="text-lg font-bold">Inbox Feed</h2>
-                <div class="h-6 w-px bg-primary/20"></div>
                 <div class="flex gap-2">
-                    <button class="bg-primary/20 text-background-dark text-xs px-3 py-1 rounded-full font-medium hover:bg-primary transition-colors">Latest</button>
-                    <button class="text-slate-500 text-xs px-3 py-1 rounded-full font-medium hover:bg-primary/10 transition-colors">Signal Score</button>
+                    <button class="sort-btn active bg-primary/20 text-background-dark text-xs px-3 py-1 rounded-full font-medium hover:bg-primary transition-colors" id="sort-latest">Latest</button>
+                    <button class="sort-btn text-slate-500 text-xs px-3 py-1 rounded-full font-medium hover:bg-primary/10 transition-colors" id="sort-score">Signal Score</button>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-4 ml-4 shrink-0">
                 <div class="relative">
                     <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
-                    <input class="pl-10 pr-4 py-1.5 bg-white dark:bg-slate-800 border-primary/10 rounded-lg text-sm w-64 focus:ring-primary focus:border-primary" placeholder="Search signals..." type="text"/>
+                    <input class="pl-10 pr-4 py-1.5 bg-white dark:bg-slate-800 border-primary/10 rounded-lg text-sm w-64 focus:ring-primary focus:border-primary" placeholder="Search signals..." type="text" id="search-input"/>
                 </div>
                 <button class="size-8 rounded-full bg-primary flex items-center justify-center text-background-dark">
                     <span class="material-symbols-outlined">tune</span>

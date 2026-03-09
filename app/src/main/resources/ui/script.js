@@ -1,7 +1,12 @@
 const storyFeed = document.getElementById('story-feed');
 const detailPane = document.getElementById('detail-pane');
+const searchInput = document.getElementById('search-input');
+
 let stories = [];
 let selectedStoryId = null;
+let currentFilter = 'inbox'; // inbox, high-signal, opposite, noise
+let currentSort = 'latest'; // latest, score
+let searchQuery = '';
 
 async function loadStories() {
     try {
@@ -13,10 +18,84 @@ async function loadStories() {
     }
 }
 
-function renderStories() {
-    storyFeed.innerHTML = stories.map(story => createStoryCard(story)).join('');
-    document.getElementById('inbox-count').innerText = stories.length;
+function getSignalScore(story) {
+    if (!story.analysis) return 0;
+    return (story.analysis.mms + story.analysis.sa + story.analysis.sd + story.analysis.d) / 4;
 }
+
+function renderStories() {
+    // 1. Filter
+    let filtered = stories.filter(s => {
+        const score = getSignalScore(s);
+        const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                             (s.analysis && s.analysis.sparringNote.toLowerCase().includes(searchQuery.toLowerCase()));
+        
+        if (!matchesSearch) return false;
+
+        switch (currentFilter) {
+            case 'high-signal': return score >= 7.5;
+            case 'opposite': return s.analysis && s.analysis.alignment === 'OPPOSITE_VIEW' && score >= 5.0;
+            case 'noise': return (s.category === 'PRODUCT' || s.category === 'SOURCE' || (s.analysis && s.analysis.alignment === 'IRRELEVANT'));
+            case 'inbox': 
+            default:
+                // Inbox excludes noise by default
+                const isNoise = (s.category === 'PRODUCT' || s.category === 'SOURCE' || (s.analysis && s.analysis.alignment === 'IRRELEVANT'));
+                return !isNoise;
+        }
+    });
+
+    // 2. Sort
+    filtered.sort((a, b) => {
+        if (currentSort === 'score') {
+            return getSignalScore(b) - getSignalScore(a);
+        } else {
+            // ID based sort (assuming higher ID is newer)
+            return b.id.localeCompare(a.id);
+        }
+    });
+
+    storyFeed.innerHTML = filtered.map(story => createStoryCard(story)).join('');
+    document.getElementById('inbox-count').innerText = filtered.length;
+}
+
+// ... createStoryCard remains same ...
+
+// Navigation Handlers
+document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.nav-link').forEach(l => {
+            l.classList.remove('bg-primary/10', 'text-slate-900', 'dark:text-primary', 'font-medium');
+            l.classList.add('text-slate-600', 'dark:text-slate-300');
+        });
+        link.classList.add('bg-primary/10', 'text-slate-900', 'dark:text-primary', 'font-medium');
+        link.classList.remove('text-slate-600', 'dark:text-slate-300');
+        
+        currentFilter = link.id.replace('nav-', '');
+        renderStories();
+    });
+});
+
+// Sort Handlers
+document.querySelectorAll('.sort-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.sort-btn').forEach(b => {
+            b.classList.remove('active', 'bg-primary/20', 'text-background-dark');
+            b.classList.add('text-slate-500');
+        });
+        btn.classList.add('active', 'bg-primary/20', 'text-background-dark');
+        btn.classList.remove('text-slate-500');
+        
+        currentSort = btn.id.replace('sort-', '');
+        renderStories();
+    });
+});
+
+// Search Handler
+searchInput.addEventListener('input', (e) => {
+    searchQuery = e.target.value;
+    renderStories();
+});
 
 function createStoryCard(story) {
     const analysis = story.analysis;
