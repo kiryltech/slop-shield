@@ -1,5 +1,6 @@
 package ai.slopshield.core
 
+import ai.slopshield.observability.RecentActivityRegistry
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -36,18 +37,18 @@ class AppContext(scope: CoroutineScope) : AutoCloseable {
     )
     val aiService = AIService()
     val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
+    val activityStream = MutableSharedFlow<ActivityEvent>(replay = 32)
+    val recentActivity = RecentActivityRegistry(scope, activityStream)
 
     private val registry: Map<KClass<*>, Any> = mapOf(
         HttpClient::class to httpClient,
         StoryRepository::class to repository,
         AIService::class to aiService,
-        FlowCollector::class to eventStream,
-        SharedFlow::class to eventStream,
-        MutableSharedFlow::class to eventStream,
+        RecentActivityRegistry::class to recentActivity,
         CoroutineScope::class to scope
     )
 
-    private val coordinator = EventCoordinator(scope, eventStream, registry)
+    private val coordinator = EventCoordinator(scope, eventStream, activityStream, registry)
 
     fun start() {
         logger.info { "AppContext: Initializing SlopShield core services..." }

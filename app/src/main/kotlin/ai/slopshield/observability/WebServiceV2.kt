@@ -1,5 +1,6 @@
 package ai.slopshield.observability
 
+import ai.slopshield.core.ActivityEvent
 import ai.slopshield.core.SlopEvent
 import ai.slopshield.core.SlopEventSerializer
 import ai.slopshield.core.SlopService
@@ -47,7 +48,9 @@ private val logger = KotlinLogging.logger {}
 class WebServiceV2(
     private val scope: CoroutineScope,
     private val repository: StoryRepository,
+    private val recentActivity: RecentActivityRegistry,
     private val eventStream: MutableSharedFlow<SlopEvent>,
+    private val activityStream: MutableSharedFlow<ActivityEvent>,
     private val port: Int = System.getProperty("slopshield.web.v2.port", "8081").toInt()
 ) : SlopServiceLifecycle {
 
@@ -61,25 +64,30 @@ class WebServiceV2(
             configureModule()
         }.start(wait = false)
 
-        // Broadcast events to all connected WebSocket sessions
+        // Broadcast domain events
         scope.launch {
             eventStream.collect { event ->
-                val json = try {
-                    Json.encodeToString(SlopEventSerializer, event)
-                } catch (e: Exception) {
-                    logger.warn { "WebServiceV2: Failed to serialize event ${event::class.simpleName}: ${e.message}" }
-                    null
+                broadcast(Json.encodeToString(SlopEventSerializer, event))
+            }
+        }
+
+        // Broadcast activity events
+        scope.launch {
+            activityStream.collect { event ->
+                // ActivityEvent is a sealed interface, so we can use its serializer
+                broadcast(Json.encodeToString(ActivityEvent.serializer(), event))
+            }
+        }
+    }
+
+    private fun broadcast(json: String) {
+        sessions.forEach { session ->
+            try {
+                scope.launch {
+                    session.send(json)
                 }
-                
-                if (json != null) {
-                    sessions.forEach { session ->
-                        try {
-                            session.send(json)
-                        } catch (e: Exception) {
-                            // Session likely closed
-                        }
-                    }
-                }
+            } catch (e: Exception) {
+                // Session likely closed
             }
         }
     }
@@ -106,6 +114,10 @@ class WebServiceV2(
             get("/api/stories") {
                 val stories = repository.getAll().sortedByDescending { it.id }.toList()
                 call.respond(stories)
+            }
+
+            get("/api/activity/recent") {
+                call.respond(recentActivity.getRecentEvents())
             }
 
             post("/api/stories/{id}/reload") {

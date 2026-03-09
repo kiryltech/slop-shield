@@ -79,16 +79,15 @@
             </div>
         </nav>
         <div class="p-4 border-t border-primary/10">
-            <p class="px-2 mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Activity Log</p>
-            <div class="space-y-3 px-2">
-                <div class="flex gap-2">
-                    <div class="w-0.5 bg-primary/20 relative"><div class="absolute top-0 left-[-1px] size-1 rounded-full bg-primary"></div></div>
-                    <p class="text-[10px] leading-tight text-slate-500"><span class="font-bold text-slate-700">Shield</span> filtered 4 low-signal sources.</p>
+            <div class="flex items-center justify-between px-2 mb-2">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Activity Log</p>
+                <div class="flex items-center gap-1.5 bg-primary/10 px-2 py-0.5 rounded-full border border-primary/10" id="active-workers-pill">
+                    <div class="size-1.5 rounded-full bg-primary animate-pulse"></div>
+                    <span class="text-[9px] font-bold text-primary" id="active-workers-count">0 WORKERS</span>
                 </div>
-                <div class="flex gap-2">
-                    <div class="w-0.5 bg-primary/20 relative"><div class="absolute top-0 left-[-1px] size-1 rounded-full bg-primary"></div></div>
-                    <p class="text-[10px] leading-tight text-slate-500"><span class="font-bold text-slate-700">System</span> updated context vector map.</p>
-                </div>
+            </div>
+            <div class="space-y-3 px-2 overflow-y-auto max-h-[150px]" id="activity-log">
+                <!-- Activity events will be injected here -->
             </div>
         </div>
     </aside>

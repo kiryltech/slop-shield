@@ -1,5 +1,6 @@
 package ai.slopshield.core
 
+import ai.slopshield.observability.RecentActivityRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -50,14 +51,17 @@ class EventCoordinatorTest {
     @Test
     fun `test component discovery and lifecycle`() = runTest {
         val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
+        val activityStream = MutableSharedFlow<ActivityEvent>(replay = 64)
+        val recentActivity = RecentActivityRegistry(this, activityStream)
         val registry = mapOf(
             CoroutineScope::class to this,
             MutableSharedFlow::class to eventStream,
             StoryRepository::class to StoryRepository(DBMaker.memoryDB().make()),
-            AIService::class to AIService()
+            AIService::class to AIService(),
+            RecentActivityRegistry::class to recentActivity
         )
         
-        val coordinator = EventCoordinator(this, eventStream, registry)
+        val coordinator = EventCoordinator(this, eventStream, activityStream, registry)
         coordinator.start("ai.slopshield.core") // Scan this package
 
         // Verify service started
@@ -84,11 +88,14 @@ class EventCoordinatorTest {
     fun `test reflection instantiation with dependencies`() {
         // Internal test for the instantiate method logic
         val eventStream = MutableSharedFlow<SlopEvent>()
+        val activityStream = MutableSharedFlow<ActivityEvent>()
+        val recentActivity = RecentActivityRegistry(CoroutineScope(Job()), activityStream)
         val registry = mapOf(
             MutableSharedFlow::class to eventStream,
-            CoroutineScope::class to CoroutineScope(Dispatchers.Default)
+            CoroutineScope::class to CoroutineScope(Dispatchers.Default),
+            RecentActivityRegistry::class to recentActivity
         )
-        val coordinator = EventCoordinator(CoroutineScope(Job()), eventStream, registry)
+        val coordinator = EventCoordinator(CoroutineScope(Job()), eventStream, activityStream, registry)
         
         // Use reflection to access private instantiate for testing or just rely on start() test above
     }

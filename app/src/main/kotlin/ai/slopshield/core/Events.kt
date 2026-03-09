@@ -125,6 +125,41 @@ sealed interface SlopEvent {
 }
 
 /**
+ * Events related to system activity and handler execution.
+ */
+@Serializable
+sealed interface ActivityEvent {
+    val executionId: String
+    val activeWorkers: Int
+    @Serializable(with = InstantSerializer::class)
+    val timestamp: Instant
+}
+
+@Serializable
+data class HandlerStarted(
+    val handler: String,
+    val event: String,
+    val storyId: String? = null,
+    override val activeWorkers: Int,
+    override val executionId: String = java.util.UUID.randomUUID().toString(),
+    @Serializable(with = InstantSerializer::class)
+    override val timestamp: Instant = Instant.now()
+) : ActivityEvent
+
+@Serializable
+data class HandlerFinished(
+    val handler: String,
+    val event: String,
+    override val executionId: String,
+    override val activeWorkers: Int,
+    val storyId: String? = null,
+    val elapsedMs: Long,
+    val success: Boolean,
+    @Serializable(with = InstantSerializer::class)
+    override val timestamp: Instant = Instant.now()
+) : ActivityEvent
+
+/**
  * An event that knows how to project itself into the [StoryRepository].
  */
 interface ProjectableEvent : SlopEvent {

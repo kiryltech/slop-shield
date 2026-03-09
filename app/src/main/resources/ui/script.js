@@ -270,14 +270,104 @@ function resetDetail() {
     `;
 }
 
+let activeWorkers = 0;
+const activityLog = document.getElementById('activity-log');
+const activeWorkersCount = document.getElementById('active-workers-count');
+let pendingStarted = new Set(); // To track active workers correctly
+
+async function loadRecentActivity() {
+    try {
+        const response = await fetch('/api/activity/recent');
+        const events = await response.json();
+        // Events from server are already in reverse chronological order (newest first)
+        // We want to process them to calculate workers and then render
+        
+        // Clear log first
+        if (activityLog) activityLog.innerHTML = '';
+        
+        // Process in reverse (oldest to newest) to build state correctly
+        [...events].reverse().forEach(event => {
+            handleActivityEvent(event, false); // false = don't animate initial load
+        });
+    } catch (e) {
+        console.error('Failed to load recent activity:', e);
+    }
+}
+
 function connectWS() {
-    const socket = new WebSocket('ws://' + window.location.host + '/ws/events');
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socket = new WebSocket(protocol + '//' + window.location.host + '/ws/events');
     socket.onmessage = (event) => {
-        console.log('Update received');
-        loadStories();
+        const data = JSON.parse(event.data);
+        
+        if (data.handler) {
+            handleActivityEvent(data, true);
+        } else {
+            console.log('Domain update received');
+            loadStories();
+        }
     };
     socket.onclose = () => setTimeout(connectWS, 3000);
 }
 
+function handleActivityEvent(event, animate = true) {
+    const isFinished = event.elapsedMs !== undefined;
+    const key = event.executionId;
+
+    // Server provides a snapshot of active workers in every event
+    activeWorkers = event.activeWorkers;
+
+    if (isFinished) {
+        pendingStarted.delete(key);
+    } else {
+        pendingStarted.add(key);
+    }
+    
+    addActivityLogEntry(event, animate);
+    updateWorkersUI();
+}
+
+function updateWorkersUI() {
+    if (!activeWorkersCount) return;
+    activeWorkersCount.innerText = `${activeWorkers} WORKER${activeWorkers !== 1 ? 'S' : ''}`;
+    const pill = document.getElementById('active-workers-pill');
+    if (activeWorkers > 0) {
+        pill.classList.remove('opacity-50');
+    } else {
+        pill.classList.add('opacity-50');
+    }
+}
+
+function addActivityLogEntry(event, animate = true) {
+    if (!activityLog) return;
+    const isFinished = event.elapsedMs !== undefined;
+    
+    let message = '';
+    if (isFinished) {
+        message = `<span class="font-bold text-slate-700">${event.handler}</span> processed ${event.event} in ${event.elapsedMs}ms ${event.success ? '✅' : '❌'}`;
+    } else {
+        message = `<span class="font-bold text-slate-700">${event.handler}</span> started ${event.event}`;
+    }
+    
+    if (event.storyId) {
+        message += ` <span class="text-slate-400 font-mono">[${event.storyId}]</span>`;
+    }
+
+    const html = `
+        <div class="flex gap-2 ${animate ? 'animate-in fade-in slide-in-from-left-2 duration-300' : ''}">
+            <div class="w-0.5 bg-primary/20 relative"><div class="absolute top-0 left-[-1px] size-1 rounded-full bg-primary"></div></div>
+            <p class="text-[9px] leading-tight text-slate-500">${message}</p>
+        </div>
+    `;
+    
+    activityLog.insertAdjacentHTML('afterbegin', html);
+    
+    while (activityLog.children.length > 20) {
+        activityLog.lastElementChild.remove();
+    }
+}
+
 loadStories();
+loadRecentActivity();
 connectWS();
+updateWorkersUI();

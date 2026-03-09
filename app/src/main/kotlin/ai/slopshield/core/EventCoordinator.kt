@@ -3,9 +3,14 @@ package ai.slopshield.core
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import org.reflections.Reflections
+import java.time.Duration
+import java.time.Instant
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.createInstance
@@ -20,12 +25,14 @@ private val logger = KotlinLogging.logger {}
  */
 class EventCoordinator(
     private val scope: CoroutineScope,
-    private val eventStream: SharedFlow<SlopEvent>,
+    private val eventStream: MutableSharedFlow<SlopEvent>,
+    private val activityStream: MutableSharedFlow<ActivityEvent>,
     private val registry: Map<KClass<*>, Any>
 ) {
     private val handlers = mutableListOf<SlopHandler<*>>()
     private val services = mutableListOf<SlopServiceLifecycle>()
     private var dispatchJob: kotlinx.coroutines.Job? = null
+    private val activeWorkersCounter = AtomicInteger(0)
 
     fun start(packageName: String = "ai.slopshield") {
         logger.info { "EventCoordinator: Scanning for components in $packageName..." }
@@ -74,14 +81,54 @@ class EventCoordinator(
                 val typedHandler = handler as SlopHandler<SlopEvent>
                 if (typedHandler.canHandle(event)) {
                     scope.launch {
+                        val startTime = Instant.now()
+                        val storyId = getStoryId(event)
+                        val started = HandlerStarted(
+                            handler = handler::class.simpleName!!, 
+                            event = event::class.simpleName!!, 
+                            storyId = storyId,
+                            activeWorkers = activeWorkersCounter.incrementAndGet()
+                        )
+                        activityStream.emit(started)
+                        
                         try {
                             typedHandler.onEvent(event)
+                            val elapsed = Duration.between(startTime, Instant.now()).toMillis()
+                            activityStream.emit(HandlerFinished(
+                                handler = handler::class.simpleName!!, 
+                                event = event::class.simpleName!!, 
+                                executionId = started.executionId, 
+                                storyId = storyId, 
+                                elapsedMs = elapsed, 
+                                success = true,
+                                activeWorkers = activeWorkersCounter.decrementAndGet()
+                            ))
                         } catch (e: Exception) {
                             logger.error(e) { "EventCoordinator: Handler ${handler::class.simpleName} failed for event ${event::class.simpleName}" }
+                            val elapsed = Duration.between(startTime, Instant.now()).toMillis()
+                            activityStream.emit(HandlerFinished(
+                                handler = handler::class.simpleName!!, 
+                                event = event::class.simpleName!!, 
+                                executionId = started.executionId, 
+                                storyId = storyId, 
+                                elapsedMs = elapsed, 
+                                success = false,
+                                activeWorkers = activeWorkersCounter.decrementAndGet()
+                            ))
                         }
                     }
                 }
             }
+    }
+
+    private fun getStoryId(event: SlopEvent): String? {
+        // Reflection-based way to get storyId from event if it exists
+        return try {
+            val property = event::class.members.find { it.name == "storyId" || it.name == "id" }
+            property?.call(event)?.toString()
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private fun shouldRegister(clazz: Class<*>): Boolean {
@@ -105,14 +152,35 @@ class EventCoordinator(
     }
 
     private fun instantiate(clazz: KClass<*>): Any {
+        // First check if the class or its superclass is in the registry
+        val existing = registry.entries.find { (type, _) ->
+            clazz.isSubclassOf(type)
+        }?.value
+        
+        if (existing != null) {
+            logger.debug { "EventCoordinator: Using existing instance from registry for ${clazz.simpleName}" }
+            return existing
+        }
+
         val constructor = clazz.primaryConstructor ?: return clazz.createInstance()
 
         val args = mutableMapOf<KParameter, Any?>()
         constructor.parameters.forEach { param ->
             val paramType = param.type.classifier as? KClass<*>
-            val dependency = registry.entries.find { (type, _) ->
-                paramType != null && type.isSubclassOf(paramType)
-            }?.value
+            
+            // Special handling for the two streams
+            val dependency = if (paramType == MutableSharedFlow::class || paramType == SharedFlow::class || paramType == FlowCollector::class) {
+                val typeArg = param.type.arguments.firstOrNull()?.type?.classifier as? KClass<*>
+                if (typeArg != null && typeArg.isSubclassOf(ActivityEvent::class)) {
+                    activityStream
+                } else {
+                    eventStream
+                }
+            } else {
+                registry.entries.find { (type, _) ->
+                    paramType != null && type.isSubclassOf(paramType)
+                }?.value
+            }
 
             if (dependency != null) {
                 args[param] = dependency

@@ -1,5 +1,6 @@
 package ai.slopshield.observability
 
+import ai.slopshield.core.ActivityEvent
 import ai.slopshield.core.SlopEvent
 import ai.slopshield.core.Story
 import ai.slopshield.core.StoryRepository
@@ -21,9 +22,11 @@ class WebServiceV2Test {
         val db = DBMaker.memoryDB().make()
         val repository = StoryRepository(db)
         val eventStream = MutableSharedFlow<SlopEvent>()
+        val activityStream = MutableSharedFlow<ActivityEvent>()
         
         application {
-            val service = WebServiceV2(this, repository, eventStream)
+            val registry = RecentActivityRegistry(this, activityStream)
+            val service = WebServiceV2(this, repository, registry, eventStream, activityStream)
             with(service) {
                 configureModule()
             }
@@ -39,11 +42,13 @@ class WebServiceV2Test {
         val db = DBMaker.memoryDB().make()
         val repository = StoryRepository(db)
         val eventStream = MutableSharedFlow<SlopEvent>()
+        val activityStream = MutableSharedFlow<ActivityEvent>()
         
         repository.upsert(Story("1", "Test Story", "http://test.com"))
 
         application {
-            val service = WebServiceV2(this, repository, eventStream)
+            val registry = RecentActivityRegistry(this, activityStream)
+            val service = WebServiceV2(this, repository, registry, eventStream, activityStream)
             with(service) {
                 configureModule()
             }
