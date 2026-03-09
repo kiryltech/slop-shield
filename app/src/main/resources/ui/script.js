@@ -251,29 +251,30 @@ function renderDetailPane(story) {
 function renderScores(analysis) {
     return `
         <div class="grid grid-cols-4 gap-4 mb-8">
-            ${renderGauge('MMS', analysis.mms, 'text-primary')}
-            ${renderGauge('SA', analysis.sa, 'text-blue-500')}
-            ${renderGauge('SD', analysis.sd, 'text-red-500')}
-            ${renderGauge('D', analysis.d, 'text-green-500')}
+            ${renderGauge('Mental Model Shift', analysis.mms, 'text-primary', 'Does this change how I think, or just confirm what I know?')}
+            ${renderGauge('Strategic Actionability', analysis.sa, 'text-blue-500', 'Can I make a concrete decision or take action based on this?')}
+            ${renderGauge('Signal Density', analysis.sd, 'text-red-500', 'Is it high-information "meat" or low-signal "fluff"?')}
+            ${renderGauge('Durability', analysis.d, 'text-green-500', 'Will this still be valuable in 2 years?')}
         </div>
     `;
 }
 
-function renderGauge(label, val, colorClass) {
+function renderGauge(label, val, colorClass, tooltip) {
     const offset = 150 - (val / 10 * 150);
     return `
-        <div class="text-center">
-            <div class="relative size-14 mx-auto mb-2">
+        <div class="text-center flex flex-col items-center justify-start h-full" title="${tooltip}">
+            <div class="relative size-14 mb-2 cursor-help shrink-0">
                 <svg class="size-full -rotate-90">
                     <circle class="text-slate-100 dark:text-slate-800" cx="28" cy="28" fill="transparent" r="24" stroke="currentColor" stroke-width="4"></circle>
                     <circle class="${colorClass}" cx="28" cy="28" fill="transparent" r="24" stroke="currentColor" stroke-dasharray="150" stroke-dashoffset="${offset}" stroke-width="4"></circle>
                 </svg>
                 <span class="absolute inset-0 flex items-center justify-center text-[10px] font-mono font-bold">${val}</span>
             </div>
-            <span class="text-[9px] font-bold uppercase tracking-tighter text-slate-400">${label}</span>
+            <span class="text-[9px] font-bold tracking-tight text-slate-400 cursor-help leading-tight">${label}</span>
         </div>
     `;
 }
+
 
 function resetDetail() {
     selectedStoryId = null;
