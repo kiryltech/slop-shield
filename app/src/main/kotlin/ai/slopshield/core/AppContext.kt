@@ -43,6 +43,7 @@ class AppContext(scope: CoroutineScope) : AutoCloseable {
         AIService::class to aiService,
         FlowCollector::class to eventStream,
         SharedFlow::class to eventStream,
+        MutableSharedFlow::class to eventStream,
         CoroutineScope::class to scope
     )
 

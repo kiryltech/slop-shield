@@ -20,14 +20,45 @@
 .alignment-irrelevant { background-color: #f1f5f9; color: #475569; }
 .alignment-pending { background-color: #f1f5f9; color: #64748b; }
 
-/* Status Indicators */
-.content-loaded-icon {
+/* Status Indicators & Actions */
+.status-actions {
     position: absolute;
     top: 12px;
     right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 20;
+}
+
+.content-loaded-icon {
     color: #22c55e;
     font-size: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.reload-btn {
+    color: #94a3b8;
+    cursor: pointer;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.reload-btn:hover {
+    color: #3498db;
+}
+.reload-btn .material-symbols-outlined {
+    font-size: 20px;
+}
+.reload-btn.loading {
+    animation: smooth-spin 1s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes smooth-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }

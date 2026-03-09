@@ -29,7 +29,12 @@ function createStoryCard(story) {
 
     return `
         <div onclick="selectStory('${story.id}')" class="relative bg-white dark:bg-slate-900 rounded-xl shadow-sm border-l-4 ${getBorderColor(categoryClass)} overflow-hidden hover:shadow-md transition-shadow group cursor-pointer ${isActive ? 'active ring-2 ring-primary bg-primary/5' : ''}">
-            ${isContentLoaded ? '<div class="content-loaded-icon" title="Content Harvested"><span class="material-symbols-outlined fill-1">check_circle</span></div>' : ''}
+            <div class="status-actions">
+                ${isContentLoaded ? '<div class="content-loaded-icon" title="Content Harvested"><span class="material-symbols-outlined fill-1">check_circle</span></div>' : ''}
+                <div class="reload-btn" onclick="event.stopPropagation(); reloadStory('${story.id}', this)" title="Force Re-Analysis">
+                    <span class="material-symbols-outlined">refresh</span>
+                </div>
+            </div>
             <div class="flex">
                 <div class="w-24 shrink-0 flex flex-col items-center justify-center bg-primary/5 p-4 border-r border-primary/5">
                     <span class="signal-score text-3xl font-bold ${score > 7 ? 'text-primary' : 'text-slate-400'}">${scoreFixed}</span>
@@ -68,6 +73,20 @@ function getHypeBg(analysis) {
     if (analysis.hypeRisk === 'HIGH') return 'bg-red-100 text-red-700';
     if (analysis.hypeRisk === 'LOW') return 'bg-green-100 text-green-700';
     return 'bg-yellow-100 text-yellow-700';
+}
+
+async function reloadStory(id, btn) {
+    btn.classList.add('loading');
+    try {
+        const response = await fetch(`/api/stories/${id}/reload`, { method: 'POST' });
+        if (response.ok) {
+            console.log(`Reload triggered for ${id}`);
+        }
+    } catch (e) {
+        console.error('Failed to trigger reload:', e);
+    } finally {
+        setTimeout(() => btn.classList.remove('loading'), 1000);
+    }
 }
 
 function selectStory(id) {

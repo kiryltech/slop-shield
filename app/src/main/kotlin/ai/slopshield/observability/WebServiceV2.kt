@@ -4,8 +4,10 @@ import ai.slopshield.core.SlopEvent
 import ai.slopshield.core.SlopEventSerializer
 import ai.slopshield.core.SlopService
 import ai.slopshield.core.SlopServiceLifecycle
+import ai.slopshield.core.StoryDiscovered
 import ai.slopshield.core.StoryRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -18,6 +20,7 @@ import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
+import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.DefaultWebSocketServerSession
 import io.ktor.server.websocket.WebSockets
@@ -26,6 +29,7 @@ import io.ktor.server.websocket.timeout
 import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.send
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -43,7 +47,7 @@ private val logger = KotlinLogging.logger {}
 class WebServiceV2(
     private val scope: CoroutineScope,
     private val repository: StoryRepository,
-    private val eventStream: SharedFlow<SlopEvent>,
+    private val eventStream: MutableSharedFlow<SlopEvent>,
     private val port: Int = System.getProperty("slopshield.web.v2.port", "8081").toInt()
 ) : SlopServiceLifecycle {
 
@@ -102,6 +106,20 @@ class WebServiceV2(
             get("/api/stories") {
                 val stories = repository.getAll().sortedByDescending { it.id }.toList()
                 call.respond(stories)
+            }
+
+            post("/api/stories/{id}/reload") {
+                val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+                val story = repository.get(id) ?: return@post call.respond(HttpStatusCode.NotFound)
+                
+                logger.info { "WebServiceV2: Manual reload requested for story $id" }
+                // Re-emit discovery to trigger the whole pipeline
+                scope.launch {
+                    eventStream.emit(
+                        StoryDiscovered(story.id, story.title, story.url)
+                    )
+                }
+                call.respond(HttpStatusCode.Accepted)
             }
 
             // 3. WebSocket for real-time updates
