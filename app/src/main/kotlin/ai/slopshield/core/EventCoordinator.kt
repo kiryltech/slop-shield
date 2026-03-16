@@ -100,11 +100,11 @@ class EventCoordinator(
                 if (typedHandler.canHandle(event)) {
                     scope.launch {
                         val startTime = Instant.now()
-                        val storyId = getStoryId(event)
+                        val eventId = event.id
                         val started = HandlerStarted(
                             handler = handler::class.simpleName!!, 
                             event = event::class.simpleName!!, 
-                            storyId = storyId,
+                            storyId = eventId,
                             activeWorkers = activeWorkersCounter.incrementAndGet()
                         )
                         activityStream.emit(started)
@@ -116,7 +116,7 @@ class EventCoordinator(
                                 handler = handler::class.simpleName!!, 
                                 event = event::class.simpleName!!, 
                                 executionId = started.executionId, 
-                                storyId = storyId, 
+                                storyId = eventId, 
                                 elapsedMs = elapsed, 
                                 success = true,
                                 activeWorkers = activeWorkersCounter.decrementAndGet()
@@ -130,16 +130,16 @@ class EventCoordinator(
                                 handler = handler::class.simpleName!!, 
                                 event = event::class.simpleName!!, 
                                 executionId = started.executionId, 
-                                storyId = storyId, 
+                                storyId = eventId, 
                                 elapsedMs = elapsed, 
                                 success = false,
                                 activeWorkers = activeWorkersCounter.decrementAndGet()
                             ))
                             
                             // Emit domain failure event if story context is available
-                            if (storyId != null) {
+                            if (eventId != null) {
                                 eventStream.emit(ProcessingFailed(
-                                    storyId = storyId,
+                                    id = eventId,
                                     handler = handler::class.simpleName!!,
                                     errorMessage = e.message ?: "Unknown error"
                                 ))
@@ -148,22 +148,6 @@ class EventCoordinator(
                     }
                 }
             }
-    }
-
-    /**
-     * Attempts to dynamically extract a story ID from an event using reflection.
-     *
-     * @param event The event to inspect.
-     * @return The story ID as a string, or null if it cannot be found.
-     */
-    private fun getStoryId(event: SlopEvent): String? {
-        // Reflection-based way to get storyId from event if it exists
-        return try {
-            val property = event::class.members.find { it.name == "storyId" || it.name == "id" }
-            property?.call(event)?.toString()
-        } catch (e: Exception) {
-            null
-        }
     }
 
     /**

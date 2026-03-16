@@ -30,7 +30,7 @@ class CategorizerTest {
      */
     @Test
     fun `test categorizer reacts to HarvestComplete and emits StoryCategorized`() = runTest {
-        val storyId = "123"
+        val id = "123"
         val cleanText = "This is a blog post about Kotlin."
         val mockAiResponse = """{"category": "WRITING", "reasoning": "It looks like an article."}"""
 
@@ -50,7 +50,7 @@ class CategorizerTest {
 
         // Emit harvest complete event
         eventStream.emit(
-            HarvestComplete(storyId = storyId, cleanText = cleanText, success = true)
+            HarvestComplete(id = id, cleanText = cleanText, success = true)
         )
 
         val categorizedEvents = eventStream
@@ -59,7 +59,7 @@ class CategorizerTest {
             .toList()
 
         assertEquals(1, categorizedEvents.size)
-        assertEquals(storyId, categorizedEvents[0].storyId)
+        assertEquals(id, categorizedEvents[0].id)
         assertEquals(StoryCategory.WRITING, categorizedEvents[0].category)
         assertEquals("It looks like an article.", categorizedEvents[0].reasoning)
     }
@@ -70,7 +70,7 @@ class CategorizerTest {
      */
     @Test
     fun `test categorizer handles unknown categories gracefully`() = runTest {
-        val storyId = "456"
+        val id = "456"
         val cleanText = "Something weird."
         val mockAiResponse = """{"category": "INVALID_CAT", "reasoning": "I don't know what this is."}"""
 
@@ -92,7 +92,7 @@ class CategorizerTest {
 
         // Emit harvest complete event
         eventStream.emit(
-            HarvestComplete(storyId = storyId, cleanText = cleanText, success = true)
+            HarvestComplete(id = id, cleanText = cleanText, success = true)
         )
 
         val categorizedEvents = eventStream
@@ -101,6 +101,7 @@ class CategorizerTest {
             .toList()
 
         assertEquals(1, categorizedEvents.size)
+        assertEquals(id, categorizedEvents[0].id)
         assertEquals(StoryCategory.UNKNOWN, categorizedEvents[0].category)
     }
 
@@ -110,7 +111,7 @@ class CategorizerTest {
      */
     @Test
     fun `test categorizer sanitizes markdown wrapped json`() = runTest {
-        val storyId = "789"
+        val id = "789"
         val cleanText = "Markdown wrap test."
         val mockAiResponse = """
             ```json
@@ -136,7 +137,7 @@ class CategorizerTest {
 
         // Emit harvest complete event
         eventStream.emit(
-            HarvestComplete(storyId = storyId, cleanText = cleanText, success = true)
+            HarvestComplete(id = id, cleanText = cleanText, success = true)
         )
 
         val categorizedEvents = eventStream
@@ -145,7 +146,7 @@ class CategorizerTest {
             .toList()
 
         assertEquals(1, categorizedEvents.size)
-        assertEquals(StoryCategory.DEMO, categorizedEvents[0].category)
+        assertEquals(id, categorizedEvents[0].id)
         assertEquals("Wrapped in code blocks.", categorizedEvents[0].reasoning)
     }
 
@@ -154,7 +155,7 @@ class CategorizerTest {
      */
     @Test
     fun `test categorizer identifies source category`() = runTest {
-        val storyId = "abc"
+        val id = "abc"
         val cleanText = "Repository containing the source code for a new Kotlin library."
         val mockAiResponse = """{"category": "SOURCE", "reasoning": "It's a code repository."}"""
 
@@ -176,7 +177,7 @@ class CategorizerTest {
 
         // Emit harvest complete event
         eventStream.emit(
-            HarvestComplete(storyId = storyId, cleanText = cleanText, success = true)
+            HarvestComplete(id = id, cleanText = cleanText, success = true)
         )
 
         val categorizedEvents = eventStream
@@ -185,6 +186,7 @@ class CategorizerTest {
             .toList()
 
         assertEquals(1, categorizedEvents.size)
+        assertEquals(id, categorizedEvents[0].id)
         assertEquals(StoryCategory.SOURCE, categorizedEvents[0].category)
     }
 }

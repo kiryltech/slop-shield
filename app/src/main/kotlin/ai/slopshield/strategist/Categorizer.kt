@@ -79,7 +79,7 @@ class Categorizer(
      * @param event The [HarvestComplete] event containing the cleaned text.
      */
     private suspend fun categorize(event: HarvestComplete) {
-        logger.info { "Categorizer: Analyzing story ${event.storyId}..." }
+        logger.info { "Categorizer: Analyzing story ${event.id}..." }
         
         val result = aiService.process(prompt, event.cleanText)
         if (result.exitCode == 0) {
@@ -91,17 +91,17 @@ class Categorizer(
                 StoryCategory.UNKNOWN
             }
 
-            logger.info { "Categorizer: Story ${event.storyId} categorized as $category. Reasoning: ${parsed.reasoning}" }
+            logger.info { "Categorizer: Story ${event.id} categorized as $category. Reasoning: ${parsed.reasoning}" }
             
             collector.emit(
                 StoryCategorized(
-                    storyId = event.storyId,
+                    id = event.id,
                     category = category,
                     reasoning = parsed.reasoning
                 )
             )
         } else {
-            logger.warn { "Categorizer: AI process failed for story ${event.storyId} with exit code ${result.exitCode}" }
+            logger.warn { "Categorizer: AI process failed for story ${event.id} with exit code ${result.exitCode}" }
             throw IllegalStateException("AI categorization failed with exit code ${result.exitCode}")
         }
     }

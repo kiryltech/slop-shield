@@ -43,7 +43,7 @@ class HarvestDumperTest {
     fun `test dumper writes clean text to disk`() = runTest {
         val dumper = HarvestDumper()
         val event = HarvestComplete(
-            storyId = "test-1",
+            id = "test-1",
             cleanText = "Scraped Content",
             success = true
         )

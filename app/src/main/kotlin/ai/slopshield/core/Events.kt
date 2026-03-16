@@ -144,6 +144,12 @@ interface SlopHandler<T : SlopEvent> {
 @Serializable
 sealed interface SlopEvent {
     /**
+     * The unique identifier for the entity related to this event (e.g., storyId).
+     * Null for system-wide events without a specific entity context.
+     */
+    val id: String?
+
+    /**
      * The point in time when the event was created.
      */
     @Serializable(with = InstantSerializer::class)
@@ -235,7 +241,7 @@ interface ProjectableEvent : SlopEvent {
  */
 @Serializable
 data class StoryDiscovered(
-    val id: String,
+    override val id: String,
     val title: String,
     val url: String,
     @Serializable(with = InstantSerializer::class)
@@ -249,13 +255,13 @@ data class StoryDiscovered(
 /**
  * Triggered by the Harvester after successfully extracting and cleaning text from a story's URL.
  *
- * @property storyId The target story's ID.
+ * @property id The target story's ID.
  * @property cleanText The extracted text content, formatted as Markdown.
  * @property success True if the harvesting and conversion was successful.
  */
 @Serializable
 data class HarvestComplete(
-    val storyId: String,
+    override val id: String,
     val cleanText: String,
     val success: Boolean,
     @Serializable(with = InstantSerializer::class)
@@ -263,7 +269,7 @@ data class HarvestComplete(
 ) : ProjectableEvent {
     override fun project(repository: StoryRepository) {
         if (success) {
-            repository.update(storyId) { it.copy(cleanText = cleanText) }
+            repository.update(id) { it.copy(cleanText = cleanText) }
         }
     }
 }
@@ -271,20 +277,20 @@ data class HarvestComplete(
 /**
  * Triggered when a handler fails to process an event.
  *
- * @property storyId The related story ID.
+ * @property id The related story ID.
  * @property handler The name of the handler that failed.
  * @property errorMessage The error message from the exception.
  */
 @Serializable
 data class ProcessingFailed(
-    val storyId: String,
+    override val id: String,
     val handler: String,
     val errorMessage: String?,
     @Serializable(with = InstantSerializer::class)
     override val timestamp: Instant = Instant.now()
 ) : ProjectableEvent {
     override fun project(repository: StoryRepository) {
-        repository.update(storyId) { it.copy(failed = true) }
+        repository.update(id) { it.copy(failed = true) }
     }
 }
 
@@ -309,20 +315,20 @@ enum class StoryCategory {
 /**
  * Triggered by the Strategist after identifying the type of content.
  *
- * @property storyId The related story ID.
+ * @property id The related story ID.
  * @property category The identified category for the content.
  * @property reasoning The explanation for why this category was assigned.
  */
 @Serializable
 data class StoryCategorized(
-    val storyId: String,
+    override val id: String,
     val category: StoryCategory,
     val reasoning: String,
     @Serializable(with = InstantSerializer::class)
     override val timestamp: Instant = Instant.now()
 ) : ProjectableEvent {
     override fun project(repository: StoryRepository) {
-        repository.update(storyId) { it.copy(category = category, categoryReasoning = reasoning) }
+        repository.update(id) { it.copy(category = category, categoryReasoning = reasoning) }
     }
 }
 
@@ -331,6 +337,7 @@ data class StoryCategorized(
  */
 @Serializable
 data class ContextRequest(
+    override val id: String? = null,
     @Serializable(with = InstantSerializer::class)
     override val timestamp: Instant = Instant.now()
 ) : SlopEvent
@@ -343,6 +350,7 @@ data class ContextRequest(
 @Serializable
 data class ContextResponse(
     val content: String,
+    override val id: String? = null,
     @Serializable(with = InstantSerializer::class)
     override val timestamp: Instant = Instant.now()
 ) : SlopEvent
@@ -390,7 +398,7 @@ data class ReasoningBullet(
 /**
  * The final output of the Strategist (The Curator).
  *
- * @property storyId The analyzed story's ID.
+ * @property id The analyzed story's ID.
  * @property mms Mental Model Shift score (0-10).
  * @property sa Strategic Actionability score (0-10).
  * @property sd Signal Density score (0-10).
@@ -402,7 +410,7 @@ data class ReasoningBullet(
  */
 @Serializable
 data class AnalysisComplete(
-    val storyId: String,
+    override val id: String,
     val mms: Int,
     val sa: Int,
     val sd: Int,
@@ -420,6 +428,6 @@ data class AnalysisComplete(
     val totalScore: Double get() = (mms + sa + sd + d) / 4.0
 
     override fun project(repository: StoryRepository) {
-        repository.update(storyId) { it.copy(analysis = this) }
+        repository.update(id) { it.copy(analysis = this) }
     }
 }

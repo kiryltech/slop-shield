@@ -38,11 +38,11 @@ class HarvestDumper : SlopHandler<HarvestComplete> {
      */
     override suspend fun onEvent(event: HarvestComplete) {
         try {
-            val baseFile = File(dumpDir, event.storyId)
+            val baseFile = File(dumpDir, event.id)
             File("${baseFile.absolutePath}.stdout.md").writeText(event.cleanText)
-            logger.debug { "HarvestDumper: Dumped story ${event.storyId} (success: ${event.success}) to ${dumpDir.absolutePath}" }
+            logger.debug { "HarvestDumper: Dumped story ${event.id} (success: ${event.success}) to ${dumpDir.absolutePath}" }
         } catch (e: Exception) {
-            logger.error(e) { "HarvestDumper: Failed to dump story ${event.storyId}" }
+            logger.error(e) { "HarvestDumper: Failed to dump story ${event.id}" }
         }
     }
 }

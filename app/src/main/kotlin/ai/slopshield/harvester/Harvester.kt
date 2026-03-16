@@ -57,7 +57,7 @@ class Harvester(
             logger.warn { "Harvester: Failed to fetch content for ${event.url}. Status: ${response.status}" }
             collector.emit(
                 HarvestComplete(
-                    storyId = event.id,
+                    id = event.id,
                     cleanText = "",
                     success = false
                 )
@@ -74,11 +74,12 @@ class Harvester(
         
         collector.emit(
             HarvestComplete(
-                storyId = event.id,
+                id = event.id,
                 cleanText = markdown,
                 success = true
             )
         )
+
     }
 
     /**

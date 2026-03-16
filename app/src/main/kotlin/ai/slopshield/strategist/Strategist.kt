@@ -173,9 +173,9 @@ class Strategist(
      * @param event The categorization event that triggered this analysis.
      */
     private suspend fun analyze(event: StoryCategorized) {
-        val story = repository.get(event.storyId) ?: return
+        val story = repository.get(event.id) ?: return
         if (story.cleanText.isNullOrBlank()) {
-            logger.warn { "Strategist: Cannot analyze story ${event.storyId} - no content available" }
+            logger.warn { "Strategist: Cannot analyze story ${event.id} - no content available" }
             return
         }
 
@@ -196,7 +196,7 @@ class Strategist(
             
             collector.emit(
                 AnalysisComplete(
-                    storyId = event.storyId,
+                    id = event.id,
                     mms = parsed.mms,
                     sa = parsed.sa,
                     sd = parsed.sd,
@@ -209,7 +209,7 @@ class Strategist(
             )
             logger.info { "Strategist: Analysis complete for ${story.title}. Score: ${(parsed.mms + parsed.sa + parsed.sd + parsed.d) / 4.0}/10" }
         } else {
-            logger.warn { "Strategist: AI analysis failed for story ${event.storyId} with exit code ${result.exitCode}" }
+            logger.warn { "Strategist: AI analysis failed for story ${event.id} with exit code ${result.exitCode}" }
             throw IllegalStateException("AI analysis failed with exit code ${result.exitCode}")
         }
     }

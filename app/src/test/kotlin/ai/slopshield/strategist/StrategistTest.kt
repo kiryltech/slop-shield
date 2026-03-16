@@ -80,7 +80,7 @@ class StrategistTest {
 
         assertEquals(1, results.size)
         val result = results[0]
-        assertEquals("test-1", result.storyId)
+        assertEquals("test-1", result.id)
         assertEquals(8, result.mms)
         assertEquals(7, result.sa)
         assertEquals(Alignment.OPPOSITE_VIEW, result.alignment)

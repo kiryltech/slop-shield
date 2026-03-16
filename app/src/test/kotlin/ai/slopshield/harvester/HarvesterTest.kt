@@ -73,7 +73,7 @@ class HarvesterTest {
             .toList()
 
         assertEquals(1, harvestEvents.size)
-        assertEquals(storyId, harvestEvents[0].storyId)
+        assertEquals(storyId, harvestEvents[0].id)
         // Note: Flexmark's exact output might vary slightly depending on configuration, 
         // so we check if it contains the key parts.
         assertTrue(harvestEvents[0].cleanText.contains("Hello World"))
@@ -105,7 +105,7 @@ class HarvesterTest {
             .toList()
 
         assertEquals(1, harvestEvents.size)
-        assertEquals(storyId, harvestEvents[0].storyId)
+        assertEquals(storyId, harvestEvents[0].id)
         assertEquals("", harvestEvents[0].cleanText)
         assertTrue(!harvestEvents[0].success)
     }
