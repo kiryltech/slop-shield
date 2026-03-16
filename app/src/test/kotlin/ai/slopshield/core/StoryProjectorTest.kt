@@ -55,7 +55,7 @@ class StoryProjectorTest {
     @Test
     fun `test HarvestComplete projects clean text`() = runTest {
         repository.upsert(Story("1", "Title", "URL"))
-        val event = HarvestComplete("1", "Clean Text", "", 0)
+        val event = HarvestComplete("1", "Clean Text", true)
         projector.onEvent(event)
 
         val story = repository.get("1")

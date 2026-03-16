@@ -29,7 +29,7 @@ object InstantSerializer : KSerializer<Instant> {
 object SlopEventSerializer : JsonContentPolymorphicSerializer<SlopEvent>(SlopEvent::class) {
     override fun selectDeserializer(element: kotlinx.serialization.json.JsonElement) = when {
         "id" in element.jsonObject && "url" in element.jsonObject -> StoryDiscovered.serializer()
-        "cleanText" in element.jsonObject && "exitCode" in element.jsonObject -> HarvestComplete.serializer()
+        "cleanText" in element.jsonObject && "success" in element.jsonObject -> HarvestComplete.serializer()
         "category" in element.jsonObject && "reasoning" in element.jsonObject -> StoryCategorized.serializer()
         "content" in element.jsonObject -> ContextResponse.serializer()
         "mms" in element.jsonObject && "sparringNote" in element.jsonObject -> AnalysisComplete.serializer()
@@ -250,20 +250,18 @@ data class StoryDiscovered(
  *
  * @property storyId The target story's ID.
  * @property cleanText The extracted text content, formatted as Markdown.
- * @property errorText Any standard error output from the scraping process.
- * @property exitCode The exit code from the scraping process.
+ * @property success True if the harvesting and conversion was successful.
  */
 @Serializable
 data class HarvestComplete(
     val storyId: String,
     val cleanText: String,
-    val errorText: String,
-    val exitCode: Int,
+    val success: Boolean,
     @Serializable(with = InstantSerializer::class)
     override val timestamp: Instant = Instant.now()
 ) : ProjectableEvent {
     override fun project(repository: StoryRepository) {
-        if (exitCode == 0) {
+        if (success) {
             repository.update(storyId) { it.copy(cleanText = cleanText) }
         }
     }

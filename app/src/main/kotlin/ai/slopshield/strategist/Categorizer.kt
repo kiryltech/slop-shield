@@ -55,13 +55,13 @@ class Categorizer(
 
     /**
      * Determines whether this handler can process the given event.
-     * Only processes successfully harvested stories (exitCode == 0).
+     * Only processes successfully harvested stories.
      *
      * @param event The [HarvestComplete] event.
      * @return True if the event should be processed.
      */
     override fun canHandle(event: HarvestComplete): Boolean {
-        return event.exitCode == 0
+        return event.success
     }
 
     /**

@@ -1,11 +1,11 @@
 package ai.slopshield.harvester
 
-import ai.slopshield.core.AiService
 import ai.slopshield.core.HarvestComplete
 import ai.slopshield.core.SlopEvent
 import ai.slopshield.core.SlopHandler
 import ai.slopshield.core.SlopListener
 import ai.slopshield.core.StoryDiscovered
+import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -16,25 +16,21 @@ import java.net.URI
 
 private val logger = KotlinLogging.logger {}
 
-private const val scraperPrompt =
-    "Please extract the main content of the input stream and output it as a Markdown text. " +
-            "Keep the text original, just turn the formatting into Markdown."
-
 /**
  * The Harvester domain service.
- * Fetches webpage content and pipes it into AIService for extraction and cleanup.
+ * Fetches webpage content and converts it to Markdown.
  * It listens for [StoryDiscovered] events and emits [HarvestComplete] events.
  *
  * @property httpClient The Ktor HTTP client used to fetch content.
  * @property collector The flow collector for emitting new domain events.
- * @property aiService The AI service used to clean up scraped HTML into Markdown.
  */
 @SlopListener
 class Harvester(
     private val httpClient: HttpClient,
-    private val collector: FlowCollector<SlopEvent>,
-    private val aiService: AiService
+    private val collector: FlowCollector<SlopEvent>
 ) : SlopHandler<StoryDiscovered> {
+
+    private val htmlConverter = FlexmarkHtmlConverter.builder().build()
 
     /**
      * Handles the [StoryDiscovered] event by initiating the harvest process.
@@ -46,7 +42,7 @@ class Harvester(
     }
 
     /**
-     * Fetches the content from the provided URL and uses AI to clean it up.
+     * Fetches the content from the provided URL and converts it to Markdown.
      *
      * @param event The [StoryDiscovered] event providing context for harvesting.
      */
@@ -60,26 +56,39 @@ class Harvester(
             val response = httpClient.get(event.url)
             if (!response.status.isSuccess()) {
                 logger.warn { "Harvester: Failed to fetch content for ${event.url}. Status: ${response.status}" }
+                collector.emit(
+                    HarvestComplete(
+                        storyId = event.id,
+                        cleanText = "",
+                        success = false
+                    )
+                )
                 return
             }
             
             val rawContent = response.bodyAsText()
             
-            // Step 2: Scrape using AI Service
-            val result = aiService.process(scraperPrompt, rawContent)
+            // Step 2: Convert HTML to Markdown using Flexmark
+            val markdown = htmlConverter.convert(rawContent)
             
-            logger.info { "Harvester: AI process finished for ${event.title} with exit code: ${result.exitCode}" }
+            logger.info { "Harvester: Conversion finished for ${event.title}" }
             
             collector.emit(
                 HarvestComplete(
                     storyId = event.id,
-                    cleanText = result.stdout,
-                    errorText = result.stderr,
-                    exitCode = result.exitCode
+                    cleanText = markdown,
+                    success = true
                 )
             )
         } catch (e: Exception) {
             logger.error(e) { "Harvester: Error harvesting ${event.url}" }
+            collector.emit(
+                HarvestComplete(
+                    storyId = event.id,
+                    cleanText = "",
+                    success = false
+                )
+            )
         }
     }
 

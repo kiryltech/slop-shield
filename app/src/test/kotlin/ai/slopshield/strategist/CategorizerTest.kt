@@ -50,7 +50,7 @@ class CategorizerTest {
 
         // Emit harvest complete event
         eventStream.emit(
-            HarvestComplete(storyId = storyId, cleanText = cleanText, errorText = "", exitCode = 0)
+            HarvestComplete(storyId = storyId, cleanText = cleanText, success = true)
         )
 
         val categorizedEvents = eventStream
@@ -92,7 +92,7 @@ class CategorizerTest {
 
         // Emit harvest complete event
         eventStream.emit(
-            HarvestComplete(storyId = storyId, cleanText = cleanText, errorText = "", exitCode = 0)
+            HarvestComplete(storyId = storyId, cleanText = cleanText, success = true)
         )
 
         val categorizedEvents = eventStream
@@ -136,7 +136,7 @@ class CategorizerTest {
 
         // Emit harvest complete event
         eventStream.emit(
-            HarvestComplete(storyId = storyId, cleanText = cleanText, errorText = "", exitCode = 0)
+            HarvestComplete(storyId = storyId, cleanText = cleanText, success = true)
         )
 
         val categorizedEvents = eventStream
@@ -176,7 +176,7 @@ class CategorizerTest {
 
         // Emit harvest complete event
         eventStream.emit(
-            HarvestComplete(storyId = storyId, cleanText = cleanText, errorText = "", exitCode = 0)
+            HarvestComplete(storyId = storyId, cleanText = cleanText, success = true)
         )
 
         val categorizedEvents = eventStream

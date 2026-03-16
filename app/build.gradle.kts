@@ -52,6 +52,9 @@ dependencies {
     // Reflection
     implementation(libs.reflections)
 
+    // HTML to Markdown
+    implementation(libs.flexmark.html2md)
+
     // Testing
     testImplementation(libs.ktor.client.mock)
     testImplementation(libs.ktor.server.test.host)

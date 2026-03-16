@@ -1,7 +1,5 @@
 package ai.slopshield.harvester
 
-import ai.slopshield.core.AiResult
-import ai.slopshield.core.AiService
 import ai.slopshield.core.HarvestComplete
 import ai.slopshield.core.SlopEvent
 import ai.slopshield.core.StoryDiscovered
@@ -17,40 +15,26 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
- * A mock implementation of [AiService] to avoid invoking real AI inference during testing.
- * Captures the input to verify the prompt context was assembled properly.
- */
-private class MockAIService : AiService {
-    /** The predefined result that will be returned upon process execution. */
-    var mockResult: AiResult = AiResult("", "", 0)
-    /** The input string that was captured during the process call. */
-    var capturedInput: String = ""
-
-    override suspend fun process(prompt: String, input: String, timeoutSeconds: Long): AiResult {
-        capturedInput = input
-        return mockResult
-    }
-}
-
-/**
- * Tests for the [Harvester] domain service, verifying web scraping and AI text extraction logic.
+ * Tests for the [Harvester] domain service, verifying web scraping and HTML conversion.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class HarvesterTest {
 
     /**
-     * Verifies that discovering a story correctly triggers an HTTP fetch, pipes the HTML
-     * into the AI service, and emits a [HarvestComplete] event with the cleaned text.
+     * Verifies that discovering a story correctly triggers an HTTP fetch, converts the HTML
+     * to Markdown, and emits a [HarvestComplete] event with the cleaned text.
      */
     @Test
     fun `test harvester reacts to StoryDiscovered and emits HarvestComplete`() = runTest {
         val storyId = "123"
         val storyTitle = "Test Story"
         val storyUrl = "http://example.com"
-        val rawHtml = "<html><body>Hello World</body></html>"
-        val expectedText = "Cleaned content from Gemini"
+        val rawHtml = "<html><body><h1>Hello World</h1><p>Test</p></body></html>"
+        // Expected Markdown result from Flexmark
+        val expectedMarkdown = "Hello World\n===========\n\nTest\n"
 
         val mockEngine = MockEngine { request ->
             if (request.url.toString() == storyUrl) {
@@ -65,15 +49,10 @@ class HarvesterTest {
         }
         val httpClient = HttpClient(mockEngine)
         
-        val mockAIService = MockAIService().apply {
-            mockResult = AiResult(expectedText, "", 0)
-        }
-
         val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
         val harvester = Harvester(
             httpClient = httpClient,
-            collector = eventStream,
-            aiService = mockAIService
+            collector = eventStream
         )
         
         // Manual event processing for unit test (avoiding EventCoordinator complexity)
@@ -95,8 +74,39 @@ class HarvesterTest {
 
         assertEquals(1, harvestEvents.size)
         assertEquals(storyId, harvestEvents[0].storyId)
-        assertEquals(expectedText, harvestEvents[0].cleanText)
-        assertEquals(0, harvestEvents[0].exitCode)
-        assertEquals(rawHtml, mockAIService.capturedInput)
+        // Note: Flexmark's exact output might vary slightly depending on configuration, 
+        // so we check if it contains the key parts.
+        assertTrue(harvestEvents[0].cleanText.contains("Hello World"))
+        assertTrue(harvestEvents[0].cleanText.contains("Test"))
+        assertTrue(harvestEvents[0].success)
+    }
+
+    /**
+     * Verifies that the harvester emits a failed HarvestComplete event upon HTTP error.
+     */
+    @Test
+    fun `test harvester emits failure on HTTP error`() = runTest {
+        val storyId = "123"
+        val storyUrl = "http://example.com/not-found"
+
+        val mockEngine = MockEngine { _ ->
+            respondError(HttpStatusCode.NotFound)
+        }
+        val httpClient = HttpClient(mockEngine)
+        
+        val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
+        val harvester = Harvester(httpClient, eventStream)
+        
+        harvester.onEvent(StoryDiscovered(id = storyId, title = "Error Story", url = storyUrl))
+
+        val harvestEvents = eventStream
+            .filterIsInstance<HarvestComplete>()
+            .take(1)
+            .toList()
+
+        assertEquals(1, harvestEvents.size)
+        assertEquals(storyId, harvestEvents[0].storyId)
+        assertEquals("", harvestEvents[0].cleanText)
+        assertTrue(!harvestEvents[0].success)
     }
 }

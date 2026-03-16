@@ -32,8 +32,7 @@ class HarvestDumper : SlopHandler<HarvestComplete> {
     }
 
     /**
-     * Handles the [HarvestComplete] event by writing the cleaned text and any
-     * error logs to the file system.
+     * Handles the [HarvestComplete] event by writing the cleaned text to the file system.
      *
      * @param event The event containing the harvested text.
      */
@@ -41,10 +40,7 @@ class HarvestDumper : SlopHandler<HarvestComplete> {
         try {
             val baseFile = File(dumpDir, event.storyId)
             File("${baseFile.absolutePath}.stdout.md").writeText(event.cleanText)
-            if (event.errorText.isNotBlank()) {
-                File("${baseFile.absolutePath}.stderr.log").writeText(event.errorText)
-            }
-            logger.debug { "HarvestDumper: Dumped story ${event.storyId} (exit: ${event.exitCode}) to ${dumpDir.absolutePath}" }
+            logger.debug { "HarvestDumper: Dumped story ${event.storyId} (success: ${event.success}) to ${dumpDir.absolutePath}" }
         } catch (e: Exception) {
             logger.error(e) { "HarvestDumper: Failed to dump story ${event.storyId}" }
         }
