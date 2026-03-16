@@ -1,11 +1,11 @@
 package ai.slopshield.strategist
 
-import ai.slopshield.core.AIResult
+import ai.slopshield.core.AiResult
 import ai.slopshield.core.HarvestComplete
+import ai.slopshield.core.MockAiService
 import ai.slopshield.core.StoryCategorized
 import ai.slopshield.core.StoryCategory
 import ai.slopshield.core.SlopEvent
-import ai.slopshield.harvester.MockAIService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filterIsInstance
@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -35,16 +34,14 @@ class CategorizerTest {
         val cleanText = "This is a blog post about Kotlin."
         val mockAiResponse = """{"category": "WRITING", "reasoning": "It looks like an article."}"""
 
-        val mockAIService = MockAIService().apply {
-            mockResult = AIResult(mockAiResponse, "", 0)
-        }
+        val mockAIService = MockAiService(AiResult(mockAiResponse, "", 0))
 
         val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
         val categorizer = Categorizer(
             collector = eventStream,
             aiService = mockAIService
         )
-        
+
         backgroundScope.launch {
             eventStream
                 .filterIsInstance<HarvestComplete>()
@@ -77,16 +74,16 @@ class CategorizerTest {
         val cleanText = "Something weird."
         val mockAiResponse = """{"category": "INVALID_CAT", "reasoning": "I don't know what this is."}"""
 
-        val mockAIService = MockAIService().apply {
-            mockResult = AIResult(mockAiResponse, "", 0)
-        }
+        val mockAIService = MockAiService(
+            AiResult(mockAiResponse, "", 0)
+        )
 
         val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
         val categorizer = Categorizer(
             collector = eventStream,
             aiService = mockAIService
         )
-        
+
         backgroundScope.launch {
             eventStream
                 .filterIsInstance<HarvestComplete>()
@@ -121,16 +118,16 @@ class CategorizerTest {
             ```
         """.trimIndent()
 
-        val mockAIService = MockAIService().apply {
-            mockResult = AIResult(mockAiResponse, "", 0)
-        }
+        val mockAIService = MockAiService(
+            AiResult(mockAiResponse, "", 0)
+        )
 
         val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
         val categorizer = Categorizer(
             collector = eventStream,
             aiService = mockAIService
         )
-        
+
         backgroundScope.launch {
             eventStream
                 .filterIsInstance<HarvestComplete>()
@@ -161,16 +158,16 @@ class CategorizerTest {
         val cleanText = "Repository containing the source code for a new Kotlin library."
         val mockAiResponse = """{"category": "SOURCE", "reasoning": "It's a code repository."}"""
 
-        val mockAIService = MockAIService().apply {
-            mockResult = AIResult(mockAiResponse, "", 0)
-        }
+        val mockAIService = MockAiService(
+            mockResult = AiResult(mockAiResponse, "", 0)
+        )
 
         val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)
         val categorizer = Categorizer(
             collector = eventStream,
             aiService = mockAIService
         )
-        
+
         backgroundScope.launch {
             eventStream
                 .filterIsInstance<HarvestComplete>()

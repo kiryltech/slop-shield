@@ -1,6 +1,7 @@
 package ai.slopshield.strategist
 
 import ai.slopshield.core.*
+import ai.slopshield.core.MockAiService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filterIsInstance
@@ -21,7 +22,7 @@ import kotlin.test.assertTrue
 class StrategistTest {
 
     private lateinit var repository: StoryRepository
-    private lateinit var aiService: MockAIService
+    private lateinit var aiService: MockAiService
     private lateinit var eventStream: MutableSharedFlow<SlopEvent>
 
     /**
@@ -60,14 +61,14 @@ class StrategistTest {
                 "sparringNote": "Cynical note"
             }
         """.trimIndent()
-        aiService = MockAIService(AIResult(mockJson, "", 0))
+        aiService = MockAiService(AiResult(mockJson, "", 0))
 
         val strategist = Strategist(this, eventStream, eventStream, aiService, repository)
         strategist.start()
 
         // 1. Provide context
         eventStream.emit(ContextResponse("My personal context"))
-        
+
         // 2. Trigger analysis
         eventStream.emit(StoryCategorized("test-1", StoryCategory.WRITING, "Reasoning"))
 
@@ -95,7 +96,7 @@ class StrategistTest {
      */
     @Test
     fun `test strategist skips low-signal categories`() = runTest {
-        aiService = MockAIService(AIResult("{}", "", 0))
+        aiService = MockAiService(AiResult("{}", "", 0))
         val strategist = Strategist(this, eventStream, eventStream, aiService, repository)
         strategist.start()
 

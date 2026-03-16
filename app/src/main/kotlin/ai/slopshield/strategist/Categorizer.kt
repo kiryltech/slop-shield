@@ -1,6 +1,6 @@
 package ai.slopshield.strategist
 
-import ai.slopshield.core.AIService
+import ai.slopshield.core.AiService
 import ai.slopshield.core.HarvestComplete
 import ai.slopshield.core.SlopEvent
 import ai.slopshield.core.SlopHandler
@@ -28,7 +28,7 @@ data class CategorizationResult(
 
 /**
  * The Categorizer domain service.
- * Listens for [HarvestComplete] events and uses the [AIService] to classify
+ * Listens for [HarvestComplete] events and uses the [AiService] to classify
  * stories into high-level categories (WRITING, PRODUCT, DEMO, etc.).
  *
  * @property collector The flow collector for emitting [StoryCategorized] events.
@@ -37,7 +37,7 @@ data class CategorizationResult(
 @SlopListener
 class Categorizer(
     private val collector: FlowCollector<SlopEvent>,
-    private val aiService: AIService
+    private val aiService: AiService
 ) : SlopHandler<HarvestComplete> {
 
     private val prompt = """

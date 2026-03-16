@@ -82,7 +82,7 @@ class EventCoordinatorTest {
             CoroutineScope::class to this,
             MutableSharedFlow::class to eventStream,
             StoryRepository::class to StoryRepository(DBMaker.memoryDB().make()),
-            AIService::class to AIService(),
+            AiService::class to GeminiCliAiService(),
             RecentActivityRegistry::class to recentActivity
         )
         

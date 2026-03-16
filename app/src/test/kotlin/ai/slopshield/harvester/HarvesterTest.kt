@@ -1,10 +1,10 @@
 package ai.slopshield.harvester
 
-import ai.slopshield.core.AIResult
+import ai.slopshield.core.AiResult
+import ai.slopshield.core.AiService
 import ai.slopshield.core.HarvestComplete
 import ai.slopshield.core.SlopEvent
 import ai.slopshield.core.StoryDiscovered
-import ai.slopshield.core.AIService
 import io.ktor.client.*
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
@@ -14,24 +14,21 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * A mock implementation of [AIService] to avoid invoking real AI inference during testing.
+ * A mock implementation of [AiService] to avoid invoking real AI inference during testing.
  * Captures the input to verify the prompt context was assembled properly.
  */
-class MockAIService : AIService(maxParallelTasks = 1) {
+private class MockAIService : AiService {
     /** The predefined result that will be returned upon process execution. */
-    var mockResult: AIResult = AIResult("", "", 0)
+    var mockResult: AiResult = AiResult("", "", 0)
     /** The input string that was captured during the process call. */
     var capturedInput: String = ""
 
-    override suspend fun process(prompt: String, input: String, timeoutSeconds: Long): AIResult {
+    override suspend fun process(prompt: String, input: String, timeoutSeconds: Long): AiResult {
         capturedInput = input
         return mockResult
     }
@@ -69,7 +66,7 @@ class HarvesterTest {
         val httpClient = HttpClient(mockEngine)
         
         val mockAIService = MockAIService().apply {
-            mockResult = AIResult(expectedText, "", 0)
+            mockResult = AiResult(expectedText, "", 0)
         }
 
         val eventStream = MutableSharedFlow<SlopEvent>(replay = 64)

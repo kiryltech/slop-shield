@@ -1,6 +1,6 @@
 package ai.slopshield.strategist
 
-import ai.slopshield.core.AIService
+import ai.slopshield.core.AiService
 import ai.slopshield.core.Alignment
 import ai.slopshield.core.AnalysisComplete
 import ai.slopshield.core.ContextRequest
@@ -63,7 +63,7 @@ class Strategist(
     private val scope: CoroutineScope,
     private val eventStream: SharedFlow<SlopEvent>,
     private val collector: FlowCollector<SlopEvent>,
-    private val aiService: AIService,
+    private val aiService: AiService,
     private val repository: StoryRepository
 ) : SlopServiceLifecycle {
 

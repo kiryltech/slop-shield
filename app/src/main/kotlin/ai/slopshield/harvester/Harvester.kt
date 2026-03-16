@@ -1,6 +1,6 @@
 package ai.slopshield.harvester
 
-import ai.slopshield.core.AIService
+import ai.slopshield.core.AiService
 import ai.slopshield.core.HarvestComplete
 import ai.slopshield.core.SlopEvent
 import ai.slopshield.core.SlopHandler
@@ -33,7 +33,7 @@ private const val scraperPrompt =
 class Harvester(
     private val httpClient: HttpClient,
     private val collector: FlowCollector<SlopEvent>,
-    private val aiService: AIService
+    private val aiService: AiService
 ) : SlopHandler<StoryDiscovered> {
 
     /**

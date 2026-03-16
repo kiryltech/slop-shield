@@ -42,7 +42,7 @@ class AppContext(scope: CoroutineScope) : AutoCloseable {
     /**
      * The AI execution engine wrapper.
      */
-    val aiService = AIService()
+    val aiService = GeminiCliAiService()
     
     /**
      * Main event stream for communication between domain components.
@@ -62,7 +62,7 @@ class AppContext(scope: CoroutineScope) : AutoCloseable {
     private val registry: Map<KClass<*>, Any> = mapOf(
         HttpClient::class to httpClient,
         StoryRepository::class to repository,
-        AIService::class to aiService,
+        AiService::class to aiService,
         RecentActivityRegistry::class to recentActivity,
         CoroutineScope::class to scope
     )
