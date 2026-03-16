@@ -101,7 +101,11 @@ function createStoryCard(story) {
     const analysis = story.analysis;
     const isIgnored = story.category === 'PRODUCT' || story.category === 'SOURCE';
     const score = analysis ? (analysis.mms + analysis.sa + analysis.sd + analysis.d) / 4 : 0;
-    const scoreFixed = isIgnored ? 'N/A' : score.toFixed(1);
+    const isPending = !isIgnored && !analysis;
+    const scoreFixed = (isIgnored || isPending) ? 'N/A' : score.toFixed(1);
+    const scoreColorClass = (isIgnored || isPending || score <= 7) ? 'text-slate-400' : 'text-primary';
+    const scoreSizeClass = (isIgnored || isPending) ? 'text-lg' : 'text-3xl';
+    
     const categoryClass = (story.category || 'unknown').toLowerCase();
     const isActive = selectedStoryId === story.id;
     const alignmentLabel = isIgnored ? 'SKIPPED' : (analysis ? analysis.alignment.replace('_', ' ') : 'PENDING');
@@ -118,7 +122,7 @@ function createStoryCard(story) {
             </div>
             <div class="flex">
                 <div class="w-24 shrink-0 flex flex-col items-center justify-center bg-primary/5 p-4 border-r border-primary/5">
-                    <span class="signal-score ${isIgnored ? 'text-lg' : 'text-3xl'} font-bold ${score > 7 ? 'text-primary' : 'text-slate-400'}">${scoreFixed}</span>
+                    <span class="signal-score ${scoreSizeClass} font-bold ${scoreColorClass}">${scoreFixed}</span>
                     <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Signal</span>
                 </div>
                 <div class="flex-1 p-5">
@@ -126,7 +130,7 @@ function createStoryCard(story) {
                         <div>
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="text-[10px] font-bold px-2 py-0.5 rounded ${alignmentClass}">${alignmentLabel}</span>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${getHypeBg(analysis)}">${analysis ? 'HYPE: ' + analysis.hypeRisk : (isIgnored ? 'N/A' : 'WAITING')}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${getHypeBg(analysis)}">${analysis ? 'HYPE: ' + analysis.hypeRisk : (isIgnored ? 'N/A' : 'PENDING')}</span>
                             </div>
                             <h3 class="font-bold text-lg group-hover:text-primary transition-colors">${story.title}</h3>
                             <p class="text-xs text-slate-400 mt-0.5">${new URL(story.url).hostname}</p>
