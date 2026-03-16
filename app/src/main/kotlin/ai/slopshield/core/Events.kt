@@ -31,6 +31,7 @@ object SlopEventSerializer : JsonContentPolymorphicSerializer<SlopEvent>(SlopEve
         "id" in element.jsonObject && "url" in element.jsonObject -> StoryDiscovered.serializer()
         "cleanText" in element.jsonObject && "success" in element.jsonObject -> HarvestComplete.serializer()
         "category" in element.jsonObject && "reasoning" in element.jsonObject -> StoryCategorized.serializer()
+        "handler" in element.jsonObject && "errorMessage" in element.jsonObject -> ProcessingFailed.serializer()
         "content" in element.jsonObject -> ContextResponse.serializer()
         "mms" in element.jsonObject && "sparringNote" in element.jsonObject -> AnalysisComplete.serializer()
         else -> throw IllegalArgumentException("Unknown event type: $element")
@@ -264,6 +265,26 @@ data class HarvestComplete(
         if (success) {
             repository.update(storyId) { it.copy(cleanText = cleanText) }
         }
+    }
+}
+
+/**
+ * Triggered when a handler fails to process an event.
+ *
+ * @property storyId The related story ID.
+ * @property handler The name of the handler that failed.
+ * @property errorMessage The error message from the exception.
+ */
+@Serializable
+data class ProcessingFailed(
+    val storyId: String,
+    val handler: String,
+    val errorMessage: String?,
+    @Serializable(with = InstantSerializer::class)
+    override val timestamp: Instant = Instant.now()
+) : ProjectableEvent {
+    override fun project(repository: StoryRepository) {
+        repository.update(storyId) { it.copy(failed = true) }
     }
 }
 

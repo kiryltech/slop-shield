@@ -101,15 +101,18 @@ function createStoryCard(story) {
     const analysis = story.analysis;
     const isIgnored = story.category === 'PRODUCT' || story.category === 'SOURCE';
     const score = analysis ? (analysis.mms + analysis.sa + analysis.sd + analysis.d) / 4 : 0;
-    const isPending = !isIgnored && !analysis;
-    const scoreFixed = (isIgnored || isPending) ? 'N/A' : score.toFixed(1);
-    const scoreColorClass = (isIgnored || isPending || score <= 7) ? 'text-slate-400' : 'text-primary';
-    const scoreSizeClass = (isIgnored || isPending) ? 'text-lg' : 'text-3xl';
+    
+    const isFailed = story.failed;
+    const isPending = !isIgnored && !analysis && !isFailed;
+    const scoreFixed = (isIgnored || isPending || isFailed) ? 'N/A' : score.toFixed(1);
+    const scoreColorClass = (isIgnored || isPending || isFailed || score <= 7) ? 'text-slate-400' : 'text-primary';
+    const scoreSizeClass = (isIgnored || isPending || isFailed) ? 'text-lg' : 'text-3xl';
     
     const categoryClass = (story.category || 'unknown').toLowerCase();
     const isActive = selectedStoryId === story.id;
-    const alignmentLabel = isIgnored ? 'SKIPPED' : (analysis ? analysis.alignment.replace('_', ' ') : 'PENDING');
-    const alignmentClass = isIgnored ? 'alignment-pending' : (analysis ? 'alignment-' + analysis.alignment.toLowerCase() : 'alignment-pending');
+    
+    const alignmentLabel = isFailed ? 'FAILED' : (isIgnored ? 'SKIPPED' : (analysis ? analysis.alignment.replace('_', ' ') : 'PENDING'));
+    const alignmentClass = isFailed ? 'alignment-failed' : (isIgnored ? 'alignment-pending' : (analysis ? 'alignment-' + analysis.alignment.toLowerCase() : 'alignment-pending'));
     const isContentLoaded = !!story.cleanText;
 
     return `
@@ -130,14 +133,14 @@ function createStoryCard(story) {
                         <div>
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="text-[10px] font-bold px-2 py-0.5 rounded ${alignmentClass}">${alignmentLabel}</span>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${getHypeBg(analysis)}">${analysis ? 'HYPE: ' + analysis.hypeRisk : (isIgnored ? 'N/A' : 'PENDING')}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${getHypeBg(analysis)}">${analysis ? 'HYPE: ' + analysis.hypeRisk : (isIgnored ? 'N/A' : (isFailed ? 'FAILED' : 'PENDING'))}</span>
                             </div>
                             <h3 class="font-bold text-lg group-hover:text-primary transition-colors">${story.title}</h3>
                             <p class="text-xs text-slate-400 mt-0.5">${new URL(story.url).hostname}</p>
                         </div>
                     </div>
                     <p class="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed italic">
-                        "${analysis ? analysis.sparringNote : (story.categoryReasoning || 'Scanning story content...')}"
+                        "${analysis ? analysis.sparringNote : (isFailed ? 'Error during processing. Click to retry.' : (story.categoryReasoning || 'Scanning story content...'))}"
                     </p>
                 </div>
             </div>
@@ -238,7 +241,12 @@ function renderDetailPane(story) {
                     <span class="material-symbols-outlined text-slate-300 text-4xl mb-3">block</span>
                     <p class="text-sm text-slate-500 italic">Deep SECV analysis is currently disabled for ${story.category} content to maintain high signal focus. Only articles, videos, and demos are analyzed.</p>
                 </div>
-            ` : '<p class="text-center p-10 text-slate-400 italic">Deep SECV analysis in progress...</p>')}
+            ` : (story.failed ? `
+                <div class="p-10 text-center bg-red-50 dark:bg-red-900/10 rounded-xl border border-dashed border-red-200 dark:border-red-800">
+                    <span class="material-symbols-outlined text-red-400 text-4xl mb-3">error</span>
+                    <p class="text-sm text-red-600 italic">An error occurred during the deep analysis process. You can try to force a re-analysis using the refresh button on the story card.</p>
+                </div>
+            ` : '<p class="text-center p-10 text-slate-400 italic">Deep SECV analysis in progress...</p>'))}
             <section>
                 <div class="flex items-center gap-2 mb-3">
                     <span class="material-symbols-outlined text-primary">terminal</span>

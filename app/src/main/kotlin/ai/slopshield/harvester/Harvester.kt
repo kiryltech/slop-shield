@@ -49,39 +49,12 @@ class Harvester(
     private suspend fun harvest(event: StoryDiscovered) {
         logger.info { "Harvester: Fetching and scraping story: ${event.title} (${event.url})" }
         
-        try {
-            validateUrl(event.url)
-            
-            // Step 1: Fetch content using Ktor
-            val response = httpClient.get(event.url)
-            if (!response.status.isSuccess()) {
-                logger.warn { "Harvester: Failed to fetch content for ${event.url}. Status: ${response.status}" }
-                collector.emit(
-                    HarvestComplete(
-                        storyId = event.id,
-                        cleanText = "",
-                        success = false
-                    )
-                )
-                return
-            }
-            
-            val rawContent = response.bodyAsText()
-            
-            // Step 2: Convert HTML to Markdown using Flexmark
-            val markdown = htmlConverter.convert(rawContent)
-            
-            logger.info { "Harvester: Conversion finished for ${event.title}" }
-            
-            collector.emit(
-                HarvestComplete(
-                    storyId = event.id,
-                    cleanText = markdown,
-                    success = true
-                )
-            )
-        } catch (e: Exception) {
-            logger.error(e) { "Harvester: Error harvesting ${event.url}" }
+        validateUrl(event.url)
+        
+        // Step 1: Fetch content using Ktor
+        val response = httpClient.get(event.url)
+        if (!response.status.isSuccess()) {
+            logger.warn { "Harvester: Failed to fetch content for ${event.url}. Status: ${response.status}" }
             collector.emit(
                 HarvestComplete(
                     storyId = event.id,
@@ -89,7 +62,23 @@ class Harvester(
                     success = false
                 )
             )
+            return
         }
+        
+        val rawContent = response.bodyAsText()
+        
+        // Step 2: Convert HTML to Markdown using Flexmark
+        val markdown = htmlConverter.convert(rawContent)
+        
+        logger.info { "Harvester: Conversion finished for ${event.title}" }
+        
+        collector.emit(
+            HarvestComplete(
+                storyId = event.id,
+                cleanText = markdown,
+                success = true
+            )
+        )
     }
 
     /**

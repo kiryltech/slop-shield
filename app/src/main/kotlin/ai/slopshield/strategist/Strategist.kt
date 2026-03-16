@@ -189,31 +189,28 @@ class Strategist(
             content = story.cleanText
         )
 
-        try {
-            val result = aiService.process(instructions, data)
-            if (result.exitCode == 0) {
-                val jsonContent = sanitizeJson(result.stdout)
-                val parsed = Json.decodeFromString<DeepAnalysisResult>(jsonContent)
-                
-                collector.emit(
-                    AnalysisComplete(
-                        storyId = event.storyId,
-                        mms = parsed.mms,
-                        sa = parsed.sa,
-                        sd = parsed.sd,
-                        d = parsed.d,
-                        alignment = try { Alignment.valueOf(parsed.alignment.uppercase()) } catch (e: Exception) { Alignment.COMPLEMENTARY },
-                        hypeRisk = try { HypeRisk.valueOf(parsed.hypeRisk.uppercase()) } catch (e: Exception) { HypeRisk.MEDIUM },
-                        sparringNote = parsed.sparringNote,
-                        reasoningBullets = parsed.reasoningBullets
-                    )
+        val result = aiService.process(instructions, data)
+        if (result.exitCode == 0) {
+            val jsonContent = sanitizeJson(result.stdout)
+            val parsed = Json.decodeFromString<DeepAnalysisResult>(jsonContent)
+            
+            collector.emit(
+                AnalysisComplete(
+                    storyId = event.storyId,
+                    mms = parsed.mms,
+                    sa = parsed.sa,
+                    sd = parsed.sd,
+                    d = parsed.d,
+                    alignment = try { Alignment.valueOf(parsed.alignment.uppercase()) } catch (e: Exception) { Alignment.COMPLEMENTARY },
+                    hypeRisk = try { HypeRisk.valueOf(parsed.hypeRisk.uppercase()) } catch (e: Exception) { HypeRisk.MEDIUM },
+                    sparringNote = parsed.sparringNote,
+                    reasoningBullets = parsed.reasoningBullets
                 )
-                logger.info { "Strategist: Analysis complete for ${story.title}. Score: ${(parsed.mms + parsed.sa + parsed.sd + parsed.d) / 4.0}/10" }
-            } else {
-                logger.warn { "Strategist: AI analysis failed for story ${event.storyId} with exit code ${result.exitCode}" }
-            }
-        } catch (e: Exception) {
-            logger.error(e) { "Strategist: Error during analysis of story ${event.storyId}" }
+            )
+            logger.info { "Strategist: Analysis complete for ${story.title}. Score: ${(parsed.mms + parsed.sa + parsed.sd + parsed.d) / 4.0}/10" }
+        } else {
+            logger.warn { "Strategist: AI analysis failed for story ${event.storyId} with exit code ${result.exitCode}" }
+            throw IllegalStateException("AI analysis failed with exit code ${result.exitCode}")
         }
     }
 

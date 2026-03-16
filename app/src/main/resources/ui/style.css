@@ -19,6 +19,7 @@
 .alignment-orthogonal { background-color: #f3e8ff; color: #7e22ce; }
 .alignment-irrelevant { background-color: #f1f5f9; color: #475569; }
 .alignment-pending { background-color: #f1f5f9; color: #64748b; }
+.alignment-failed { background-color: #fee2e2; color: #b91c1c; }
 
 /* Status Indicators & Actions */
 .status-actions {

@@ -38,6 +38,7 @@ class StoryJsonSerializer : GroupSerializerObjectArray<Story>() {
  * @property category The determined category/type of content.
  * @property categoryReasoning The rationale behind the assigned category.
  * @property analysis The final detailed analysis if the story is deemed high signal.
+ * @property failed True if any step in the processing pipeline failed.
  */
 @Serializable
 data class Story(
@@ -47,7 +48,8 @@ data class Story(
     val cleanText: String? = null,
     val category: StoryCategory? = null,
     val categoryReasoning: String? = null,
-    val analysis: AnalysisComplete? = null
+    val analysis: AnalysisComplete? = null,
+    val failed: Boolean = false
 ) : JavaSerializable
 
 

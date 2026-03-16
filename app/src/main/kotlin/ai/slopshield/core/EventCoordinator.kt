@@ -124,6 +124,8 @@ class EventCoordinator(
                         } catch (e: Exception) {
                             logger.error(e) { "EventCoordinator: Handler ${handler::class.simpleName} failed for event ${event::class.simpleName}" }
                             val elapsed = Duration.between(startTime, Instant.now()).toMillis()
+                            
+                            // Emit failure activity event
                             activityStream.emit(HandlerFinished(
                                 handler = handler::class.simpleName!!, 
                                 event = event::class.simpleName!!, 
@@ -133,6 +135,15 @@ class EventCoordinator(
                                 success = false,
                                 activeWorkers = activeWorkersCounter.decrementAndGet()
                             ))
+                            
+                            // Emit domain failure event if story context is available
+                            if (storyId != null) {
+                                eventStream.emit(ProcessingFailed(
+                                    storyId = storyId,
+                                    handler = handler::class.simpleName!!,
+                                    errorMessage = e.message ?: "Unknown error"
+                                ))
+                            }
                         }
                     }
                 }

@@ -81,31 +81,28 @@ class Categorizer(
     private suspend fun categorize(event: HarvestComplete) {
         logger.info { "Categorizer: Analyzing story ${event.storyId}..." }
         
-        try {
-            val result = aiService.process(prompt, event.cleanText)
-            if (result.exitCode == 0) {
-                val jsonContent = sanitizeJson(result.stdout)
-                val parsed = Json.decodeFromString<CategorizationResult>(jsonContent)
-                val category = try {
-                    StoryCategory.valueOf(parsed.category.uppercase())
-                } catch (e: Exception) {
-                    StoryCategory.UNKNOWN
-                }
-
-                logger.info { "Categorizer: Story ${event.storyId} categorized as $category. Reasoning: ${parsed.reasoning}" }
-                
-                collector.emit(
-                    StoryCategorized(
-                        storyId = event.storyId,
-                        category = category,
-                        reasoning = parsed.reasoning
-                    )
-                )
-            } else {
-                logger.warn { "Categorizer: AI process failed for story ${event.storyId} with exit code ${result.exitCode}" }
+        val result = aiService.process(prompt, event.cleanText)
+        if (result.exitCode == 0) {
+            val jsonContent = sanitizeJson(result.stdout)
+            val parsed = Json.decodeFromString<CategorizationResult>(jsonContent)
+            val category = try {
+                StoryCategory.valueOf(parsed.category.uppercase())
+            } catch (e: Exception) {
+                StoryCategory.UNKNOWN
             }
-        } catch (e: Exception) {
-            logger.error(e) { "Categorizer: Error categorizing story ${event.storyId}" }
+
+            logger.info { "Categorizer: Story ${event.storyId} categorized as $category. Reasoning: ${parsed.reasoning}" }
+            
+            collector.emit(
+                StoryCategorized(
+                    storyId = event.storyId,
+                    category = category,
+                    reasoning = parsed.reasoning
+                )
+            )
+        } else {
+            logger.warn { "Categorizer: AI process failed for story ${event.storyId} with exit code ${result.exitCode}" }
+            throw IllegalStateException("AI categorization failed with exit code ${result.exitCode}")
         }
     }
 
