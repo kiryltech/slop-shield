@@ -13,6 +13,14 @@ async function loadStories() {
         const response = await fetch('/api/stories');
         stories = await response.json();
         renderStories();
+        
+        // Refresh detail pane if a story is currently selected to keep it in sync
+        if (selectedStoryId) {
+            const story = stories.find(s => s.id === selectedStoryId);
+            if (story) {
+                renderDetailPane(story);
+            }
+        }
     } catch (e) {
         console.error('Failed to load stories:', e);
     }
