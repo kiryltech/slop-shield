@@ -64,6 +64,20 @@ class StoryProjectorTest {
     }
 
     /**
+     * Verifies that a failed [HarvestComplete] event marks the story as failed.
+     */
+    @Test
+    fun `test HarvestComplete projects failure`() = runTest {
+        repository.upsert(Story("1", "Title", "URL"))
+        val event = HarvestComplete("1", "", false)
+        projector.onEvent(event)
+
+        val story = repository.get("1")
+        assertNotNull(story)
+        assertEquals(true, story.failed)
+    }
+
+    /**
      * Verifies that a [StoryCategorized] event updates an existing story with category and reasoning.
      */
     @Test

@@ -270,6 +270,8 @@ data class HarvestComplete(
     override fun project(repository: StoryRepository) {
         if (success) {
             repository.update(id) { it.copy(cleanText = cleanText) }
+        } else {
+            repository.update(id) { it.copy(failed = true) }
         }
     }
 }
