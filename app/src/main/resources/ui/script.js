@@ -7,18 +7,25 @@ let selectedStoryId = null;
 let currentFilter = 'inbox'; // inbox, high-signal, opposite, noise
 let currentSort = 'latest'; // latest, score
 let searchQuery = '';
+let lastLoadRequestId = 0;
 
 async function loadStories() {
+    const requestId = ++lastLoadRequestId;
     try {
         const response = await fetch('/api/stories');
-        stories = await response.json();
-        renderStories();
+        const data = await response.json();
         
-        // Refresh detail pane if a story is currently selected to keep it in sync
-        if (selectedStoryId) {
-            const story = stories.find(s => s.id === selectedStoryId);
-            if (story) {
-                renderDetailPane(story);
+        // Only update if this is still the latest request we sent
+        if (requestId === lastLoadRequestId) {
+            stories = data;
+            renderStories();
+            
+            // Refresh detail pane if a story is currently selected to keep it in sync
+            if (selectedStoryId) {
+                const story = stories.find(s => s.id === selectedStoryId);
+                if (story) {
+                    renderDetailPane(story);
+                }
             }
         }
     } catch (e) {
@@ -339,9 +346,20 @@ function connectWS() {
         
         if (data.handler) {
             handleActivityEvent(data, true);
+            
+            // Critical fix: If StoryProjector just finished, it means the repository
+            // is now up-to-date with the domain event. Trigger a reload now.
+            if (data.handler === 'StoryProjector' && data.elapsedMs !== undefined) {
+                console.log('StoryProjector finished, refreshing stories');
+                loadStories();
+            }
         } else {
-            console.log('Domain update received');
-            loadStories();
+            console.log('Domain update received:', data);
+            // Reload on ProcessingFailed because it might not go through StoryProjector
+            // or we want immediate feedback.
+            if (data.errorMessage) {
+                loadStories();
+            }
         }
     };
     socket.onclose = () => setTimeout(connectWS, 3000);

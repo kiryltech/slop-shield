@@ -6,7 +6,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.reflections.Reflections
 import java.time.Duration
 import java.time.Instant
@@ -38,6 +41,9 @@ class EventCoordinator(
     private val services = mutableListOf<SlopServiceLifecycle>()
     private var dispatchJob: kotlinx.coroutines.Job? = null
     private val activeWorkersCounter = AtomicInteger(0)
+    
+    // Mutexes per storyId to ensure sequential processing for the same entity
+    private val storyMutexes = java.util.concurrent.ConcurrentHashMap<String, Mutex>()
 
     /**
      * Scans the specified package for annotated components and starts them.
@@ -89,65 +95,106 @@ class EventCoordinator(
 
     /**
      * Dispatches an incoming event to all applicable handlers.
+     * Handlers for the same storyId are executed sequentially to maintain data integrity.
      *
      * @param event The event to be dispatched.
      */
     @Suppress("UNCHECKED_CAST")
     private fun dispatch(event: SlopEvent) {
-        handlers.filter { it.eventType.isInstance(event) }
-            .forEach { handler ->
-                val typedHandler = handler as SlopHandler<SlopEvent>
-                if (typedHandler.canHandle(event)) {
-                    scope.launch {
-                        val startTime = Instant.now()
-                        val eventId = event.id
-                        val started = HandlerStarted(
-                            handler = handler::class.simpleName!!, 
-                            event = event::class.simpleName!!, 
-                            storyId = eventId,
-                            activeWorkers = activeWorkersCounter.incrementAndGet()
-                        )
-                        activityStream.emit(started)
-                        
-                        try {
-                            typedHandler.onEvent(event)
-                            val elapsed = Duration.between(startTime, Instant.now()).toMillis()
-                            activityStream.emit(HandlerFinished(
-                                handler = handler::class.simpleName!!, 
-                                event = event::class.simpleName!!, 
-                                executionId = started.executionId, 
-                                storyId = eventId, 
-                                elapsedMs = elapsed, 
-                                success = true,
-                                activeWorkers = activeWorkersCounter.decrementAndGet()
-                            ))
-                        } catch (e: Exception) {
-                            logger.error(e) { "EventCoordinator: Handler ${handler::class.simpleName} failed for event ${event::class.simpleName}" }
-                            val elapsed = Duration.between(startTime, Instant.now()).toMillis()
-                            
-                            // Emit failure activity event
-                            activityStream.emit(HandlerFinished(
-                                handler = handler::class.simpleName!!, 
-                                event = event::class.simpleName!!, 
-                                executionId = started.executionId, 
-                                storyId = eventId, 
-                                elapsedMs = elapsed, 
-                                success = false,
-                                activeWorkers = activeWorkersCounter.decrementAndGet()
-                            ))
-                            
-                            // Emit domain failure event if story context is available
-                            if (eventId != null) {
-                                eventStream.emit(ProcessingFailed(
-                                    id = eventId,
-                                    handler = handler::class.simpleName!!,
-                                    errorMessage = e.message ?: "Unknown error"
-                                ))
-                            }
-                        }
-                    }
+        val applicableHandlers = handlers.filter { it.eventType.isInstance(event) }
+            .map { it as SlopHandler<SlopEvent> }
+            .filter { it.canHandle(event) }
+
+        if (applicableHandlers.isEmpty()) return
+
+        scope.launch {
+            val eventId = event.id
+            
+            // If the event has a storyId, we serialize ALL handlers for this story
+            if (eventId != null) {
+                val mutex = storyMutexes.computeIfAbsent(eventId) { Mutex() }
+                mutex.withLock {
+                    processHandlers(applicableHandlers, event)
+                }
+            } else {
+                // System-wide events without a storyId can run handlers in parallel
+                processHandlers(applicableHandlers, event)
+            }
+        }
+    }
+
+    /**
+     * Executes a list of handlers for a given event.
+     */
+    private suspend fun processHandlers(handlers: List<SlopHandler<SlopEvent>>, event: SlopEvent) {
+        // 1. Run StoryProjector FIRST to ensure the DB is updated before any domain logic runs
+        val projector = handlers.find { it::class.simpleName == "StoryProjector" }
+        if (projector != null) {
+            runHandler(projector, event)
+        }
+
+        // 2. Run other handlers in parallel
+        val others = handlers.filter { it !== projector }
+        if (others.isNotEmpty()) {
+            val jobs = others.map { handler ->
+                scope.launch {
+                    runHandler(handler, event)
                 }
             }
+            jobs.joinAll()
+        }
+    }
+
+    /**
+     * Internal helper to execute a single handler with full observability logging.
+     */
+    private suspend fun runHandler(handler: SlopHandler<SlopEvent>, event: SlopEvent) {
+        val startTime = Instant.now()
+        val eventId = event.id
+        val started = HandlerStarted(
+            handler = handler::class.simpleName!!, 
+            event = event::class.simpleName!!, 
+            storyId = eventId,
+            activeWorkers = activeWorkersCounter.incrementAndGet()
+        )
+        activityStream.emit(started)
+        
+        try {
+            handler.onEvent(event)
+            val elapsed = Duration.between(startTime, Instant.now()).toMillis()
+            activityStream.emit(HandlerFinished(
+                handler = handler::class.simpleName!!, 
+                event = event::class.simpleName!!, 
+                executionId = started.executionId, 
+                storyId = eventId, 
+                elapsedMs = elapsed, 
+                success = true,
+                activeWorkers = activeWorkersCounter.decrementAndGet()
+            ))
+        } catch (e: Exception) {
+            logger.error(e) { "EventCoordinator: Handler ${handler::class.simpleName} failed for event ${event::class.simpleName}" }
+            val elapsed = Duration.between(startTime, Instant.now()).toMillis()
+            
+            // Emit failure activity event
+            activityStream.emit(HandlerFinished(
+                handler = handler::class.simpleName!!, 
+                event = event::class.simpleName!!, 
+                executionId = started.executionId, 
+                storyId = eventId, 
+                elapsedMs = elapsed, 
+                success = false,
+                activeWorkers = activeWorkersCounter.decrementAndGet()
+            ))
+            
+            // Emit domain failure event if story context is available
+            if (eventId != null) {
+                eventStream.emit(ProcessingFailed(
+                    id = eventId,
+                    handler = handler::class.simpleName!!,
+                    errorMessage = e.message ?: "Unknown error"
+                ))
+            }
+        }
     }
 
     /**

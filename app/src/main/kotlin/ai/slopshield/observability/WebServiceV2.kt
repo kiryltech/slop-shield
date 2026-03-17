@@ -72,38 +72,6 @@ class WebServiceV2(
         server = embeddedServer(Netty, port = port) {
             configureModule()
         }.start(wait = false)
-
-        // Broadcast domain events
-        scope.launch {
-            eventStream.collect { event ->
-                broadcast(Json.encodeToString(SlopEventSerializer, event))
-            }
-        }
-
-        // Broadcast activity events
-        scope.launch {
-            activityStream.collect { event ->
-                // ActivityEvent is a sealed interface, so we can use its serializer
-                broadcast(Json.encodeToString(ActivityEvent.serializer(), event))
-            }
-        }
-    }
-
-    /**
-     * Broadcasts a JSON string to all active WebSocket sessions.
-     *
-     * @param json The serialized event to broadcast.
-     */
-    private fun broadcast(json: String) {
-        sessions.forEach { session ->
-            try {
-                scope.launch {
-                    session.send(json)
-                }
-            } catch (e: Exception) {
-                // Session likely closed
-            }
-        }
     }
 
     /**
@@ -152,7 +120,22 @@ class WebServiceV2(
             webSocket("/ws/events") {
                 sessions.add(this)
                 try {
+                    // Start a coroutine for this session to collect and send events sequentially
+                    val eventJob = launch {
+                        eventStream.collect { event ->
+                            send(Json.encodeToString(SlopEventSerializer, event))
+                        }
+                    }
+                    val activityJob = launch {
+                        activityStream.collect { event ->
+                            send(Json.encodeToString(ActivityEvent.serializer(), event))
+                        }
+                    }
+                    
                     for (frame in incoming) { /* keep session open */ }
+                    
+                    eventJob.cancel()
+                    activityJob.cancel()
                 } finally {
                     sessions.remove(this)
                 }
