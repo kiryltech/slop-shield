@@ -114,7 +114,7 @@ open class GeminiCliAiService(
     /**
      * Gracefully shuts down the thread pool, ensuring all resources are released.
      */
-    fun shutdown() {
+    override fun shutdown() {
         executor.shutdown()
         if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
             executor.shutdownNow()

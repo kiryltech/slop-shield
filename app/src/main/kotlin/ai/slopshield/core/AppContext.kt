@@ -4,6 +4,7 @@ import ai.slopshield.observability.RecentActivityRegistry
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
@@ -26,6 +27,11 @@ class AppContext(scope: CoroutineScope) : AutoCloseable {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 120_000
+            connectTimeoutMillis = 10_000
+            socketTimeoutMillis = 120_000
+        }
     }
 
     /**
@@ -42,7 +48,14 @@ class AppContext(scope: CoroutineScope) : AutoCloseable {
     /**
      * The AI execution engine wrapper.
      */
-    val aiService = GeminiCliAiService()
+    val aiService: AiService = when (val provider = System.getProperty("slopshield.ai.provider", "gemini").lowercase()) {
+        "claude" -> ClaudeAiService(httpClient)
+        "gemini" -> GeminiCliAiService()
+        else -> {
+            logger.warn { "AppContext: Unknown AI provider '$provider', falling back to Gemini CLI" }
+            GeminiCliAiService()
+        }
+    }
     
     /**
      * Main event stream for communication between domain components.

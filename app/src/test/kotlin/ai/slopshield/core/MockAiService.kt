@@ -9,4 +9,8 @@ class MockAiService(val mockResult: AiResult) : AiService {
     override suspend fun process(prompt: String, context: String, timeoutSeconds: Long): AiResult {
         return mockResult
     }
+
+    override fun shutdown() {
+        // No resources to release
+    }
 }

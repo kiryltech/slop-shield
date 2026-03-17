@@ -14,4 +14,9 @@ interface AiService {
         context: String,
         timeoutSeconds: Long = 120
     ): AiResult
+
+    /**
+     * Gracefully shuts down the AI service and releases any resources.
+     */
+    fun shutdown()
 }
