@@ -37,6 +37,7 @@ class StoryJsonSerializer : GroupSerializerObjectArray<Story>() {
  * @property cleanText Extracted clean text content, stripped of formatting.
  * @property category The determined category/type of content.
  * @property categoryReasoning The rationale behind the assigned category.
+ * @property aiInvolvement The estimated level of AI involvement in the content.
  * @property analysis The final detailed analysis if the story is deemed high signal.
  * @property failed True if any step in the processing pipeline failed.
  */
@@ -48,6 +49,7 @@ data class Story(
     val cleanText: String? = null,
     val category: StoryCategory? = null,
     val categoryReasoning: String? = null,
+    val aiInvolvement: AiInvolvement? = null,
     val analysis: AnalysisComplete? = null,
     val failed: Boolean = false
 ) : JavaSerializable

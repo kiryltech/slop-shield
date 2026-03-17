@@ -1,5 +1,6 @@
 package ai.slopshield.strategist
 
+import ai.slopshield.core.AiInvolvement
 import ai.slopshield.core.AiService
 import ai.slopshield.core.HarvestComplete
 import ai.slopshield.core.SlopEvent
@@ -19,11 +20,13 @@ private val logger = KotlinLogging.logger {}
  *
  * @property category The determined string category (e.g., "WRITING", "PRODUCT").
  * @property reasoning A brief explanation of why this category was chosen.
+ * @property aiInvolvement The estimated level of AI involvement in the content.
  */
 @Serializable
 data class CategorizationResult(
     val category: String,
-    val reasoning: String
+    val reasoning: String,
+    val aiInvolvement: String
 )
 
 /**
@@ -49,8 +52,16 @@ class Categorizer(
         - VIDEO: Video content platforms like YouTube, Vimeo, or technical talks.
         - UNKNOWN: Anything that doesn't fit the above.
 
+        Also analyze the level of AI involvement in the content generation. Choose from:
+        - HAND_CRAFTED: Deeply personal, unique voice, highly specific technical details.
+        - ASSISTED: Mostly human-written but likely used AI for outlines or polishing.
+        - COLLABORATIVE: A mix of human insight and heavy AI structure.
+        - HIGH_AI: Primarily AI-generated with minimal human oversight.
+        - PURE_SLOP: Unedited, generic AI output designed for SEO/volume.
+        - UNKNOWN: Default or undetermined level of involvement.
+
         CRITICAL: Output ONLY a raw JSON object. Do not wrap it in markdown code blocks.
-        Format: {"category": "CATEGORY_NAME", "reasoning": "brief explanation"}
+        Format: {"category": "CATEGORY_NAME", "reasoning": "brief explanation", "aiInvolvement": "HAND_CRAFTED"}
     """.trimIndent()
 
     /**
@@ -88,16 +99,24 @@ class Categorizer(
             val category = try {
                 StoryCategory.valueOf(parsed.category.uppercase())
             } catch (e: Exception) {
+                logger.warn { "Categorizer: Failed to parse category '${parsed.category}' for story ${event.id}. Defaulting to UNKNOWN." }
                 StoryCategory.UNKNOWN
             }
+            val involvement = try {
+                AiInvolvement.valueOf(parsed.aiInvolvement.uppercase())
+            } catch (e: Exception) {
+                logger.warn { "Categorizer: Failed to parse AI involvement '${parsed.aiInvolvement}' for story ${event.id}. Defaulting to UNKNOWN." }
+                AiInvolvement.UNKNOWN
+            }
 
-            logger.info { "Categorizer: Story ${event.id} categorized as $category. Reasoning: ${parsed.reasoning}" }
+            logger.info { "Categorizer: Story ${event.id} categorized as $category with involvement $involvement. Reasoning: ${parsed.reasoning}" }
             
             collector.emit(
                 StoryCategorized(
                     id = event.id,
                     category = category,
-                    reasoning = parsed.reasoning
+                    reasoning = parsed.reasoning,
+                    aiInvolvement = involvement
                 )
             )
         } else {

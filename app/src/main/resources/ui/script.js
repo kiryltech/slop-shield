@@ -149,6 +149,7 @@ function createStoryCard(story) {
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="text-[10px] font-bold px-2 py-0.5 rounded ${alignmentClass}">${alignmentLabel}</span>
                                 <span class="text-[10px] font-bold px-2 py-0.5 rounded ${getHypeBg(analysis)}">${analysis ? 'HYPE: ' + analysis.hypeRisk : (isIgnored ? 'N/A' : (isFailed ? 'FAILED' : 'PENDING'))}</span>
+                                ${story.aiInvolvement && story.aiInvolvement !== 'UNKNOWN' ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded ${getAiInvolvementBg(story.aiInvolvement)}">${getAiInvolvementLabel(story.aiInvolvement)}</span>` : ''}
                             </div>
                             <h3 class="font-bold text-lg group-hover:text-primary transition-colors">${story.title}</h3>
                             <p class="text-xs text-slate-400 mt-0.5">${new URL(story.url).hostname}</p>
@@ -176,6 +177,30 @@ function getHypeBg(analysis) {
     if (analysis.hypeRisk === 'HIGH') return 'bg-red-100 text-red-700';
     if (analysis.hypeRisk === 'LOW') return 'bg-green-100 text-green-700';
     return 'bg-yellow-100 text-yellow-700';
+}
+
+function getAiInvolvementBg(involvement) {
+    switch (involvement) {
+        case 'HAND_CRAFTED': return 'bg-emerald-100 text-emerald-800';
+        case 'ASSISTED': return 'bg-teal-100 text-teal-800';
+        case 'COLLABORATIVE': return 'bg-blue-100 text-blue-800';
+        case 'HIGH_AI': return 'bg-orange-100 text-orange-800';
+        case 'PURE_SLOP': return 'bg-red-100 text-red-800';
+        case 'UNKNOWN':
+        default: return 'bg-slate-100 text-slate-500';
+    }
+}
+
+function getAiInvolvementLabel(involvement) {
+    switch (involvement) {
+        case 'HAND_CRAFTED': return 'Hand Crafted';
+        case 'ASSISTED': return 'AI Assisted';
+        case 'COLLABORATIVE': return 'AI Collaborated';
+        case 'HIGH_AI': return 'Mostly AI';
+        case 'PURE_SLOP': return 'AI Slop';
+        case 'UNKNOWN': return 'Unknown Slop';
+        default: return involvement;
+    }
 }
 
 async function reloadStory(id, btn) {
@@ -220,7 +245,13 @@ function renderDetailPane(story) {
             </div>
             <div class="mb-6">
                 <h2 class="text-2xl font-bold leading-tight mb-2">${story.title}</h2>
-                <p class="text-sm text-slate-400">ID: ${story.id} • ${story.category || 'Categorizing...'}</p>
+                <div class="flex items-center gap-2">
+                    <p class="text-sm text-slate-400">ID: ${story.id} • ${story.category || 'Categorizing...'}</p>
+                    ${story.aiInvolvement && story.aiInvolvement !== 'UNKNOWN' ? `
+                        <span class="size-1 rounded-full bg-slate-300"></span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded ${getAiInvolvementBg(story.aiInvolvement)}">${getAiInvolvementLabel(story.aiInvolvement)}</span>
+                    ` : ''}
+                </div>
             </div>
             ${analysis ? renderScores(analysis) : ''}
         </div>

@@ -315,22 +315,42 @@ enum class StoryCategory {
 }
 
 /**
+ * The scale of AI involvement in the creation of the content.
+ */
+enum class AiInvolvement {
+    /** Deeply personal, unique voice, highly specific technical details. */
+    HAND_CRAFTED,
+    /** Mostly human-written but likely used AI for outlines or polishing. */
+    ASSISTED,
+    /** A mix of human insight and heavy AI structure. */
+    COLLABORATIVE,
+    /** Primarily AI-generated with minimal human oversight. */
+    HIGH_AI,
+    /** Unedited, generic AI output designed for SEO/volume. */
+    PURE_SLOP,
+    /** Default or undetermined level of involvement. */
+    UNKNOWN
+}
+
+/**
  * Triggered by the Strategist after identifying the type of content.
  *
  * @property id The related story ID.
  * @property category The identified category for the content.
  * @property reasoning The explanation for why this category was assigned.
+ * @property aiInvolvement The estimated level of AI involvement in the content.
  */
 @Serializable
 data class StoryCategorized(
     override val id: String,
     val category: StoryCategory,
     val reasoning: String,
+    val aiInvolvement: AiInvolvement = AiInvolvement.UNKNOWN,
     @Serializable(with = InstantSerializer::class)
     override val timestamp: Instant = Instant.now()
 ) : ProjectableEvent {
     override fun project(repository: StoryRepository) {
-        repository.update(id) { it.copy(category = category, categoryReasoning = reasoning) }
+        repository.update(id) { it.copy(category = category, categoryReasoning = reasoning, aiInvolvement = aiInvolvement) }
     }
 }
 

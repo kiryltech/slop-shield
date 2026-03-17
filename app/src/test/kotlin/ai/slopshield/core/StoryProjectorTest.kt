@@ -83,12 +83,13 @@ class StoryProjectorTest {
     @Test
     fun `test StoryCategorized projects category`() = runTest {
         repository.upsert(Story("1", "Title", "URL"))
-        val event = StoryCategorized("1", StoryCategory.WRITING, "Reasoning")
+        val event = StoryCategorized("1", StoryCategory.WRITING, "Reasoning", AiInvolvement.UNKNOWN)
         projector.onEvent(event)
 
         val story = repository.get("1")
         assertNotNull(story)
         assertEquals(StoryCategory.WRITING, story.category)
         assertEquals("Reasoning", story.categoryReasoning)
+        assertEquals(AiInvolvement.UNKNOWN, story.aiInvolvement)
     }
 }
