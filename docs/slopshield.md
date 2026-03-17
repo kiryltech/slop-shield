@@ -17,7 +17,7 @@ The internal intelligence driving the analysis is known as **The Curator**.
 
 *   **Platform:** **Kotlin (JVM)**. Chosen for robust multi-threading and type-safe service boundaries.
 *   **Concurrency:** Kotlin **Coroutines** & **Flows** (simulating the internal Domain Event Stream via **SharedFlow**).
-*   **AI Engine:** **The Curator** (a Gemini CLI Wrapper). The system executes local Gemini CLI sessions to perform deep analysis while maintaining local auth and cost efficiency.
+*   **AI Engine:** **The Curator** (AIService). The system utilizes an AI execution engine to perform deep analysis while maintaining local auth and cost efficiency.
 *   **Orchestration:** **EventCoordinator**. A reflection-based discovery layer that automatically wires **SlopHandlers** and **SlopServices** into the event stream.
 *   **Memory Strategy:** **Full-Context Injection**. The "Memory" module aggregates the entire local corpus into the LLM context window for V1.
 *   **Persistence:** **MapDB** (Embedded NoSQL).
@@ -39,7 +39,7 @@ The internal intelligence driving the analysis is known as **The Curator**.
 
 ### **B. The Harvester (Scraping Domain)**
 *   **Responsibility:** Extracts clean text from external URLs.
-*   **Behavior:** Initially delegates scraping to **The Curator** (Gemini CLI) for rapid prototyping, with future plans for a deterministic, headless-browser-based "Harvester" service.
+*   **Behavior:** Initially delegates scraping to the **AIService** for rapid prototyping, with future plans for a deterministic, headless-browser-based "Harvester" service.
 
 ### **C. The Memory (Contextual Domain)**
 *   **Responsibility:** Aggregates local `.md` drafts and Medium RSS content.

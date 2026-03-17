@@ -109,11 +109,11 @@ class Categorizer(
     /**
      * Sanitizes AI JSON output by removing markdown code blocks and leaving only the JSON portion.
      *
-     * @param input The raw output from the AI.
+     * @param aiResponse The raw output from the AI.
      * @return The cleaned JSON string.
      */
-    private fun sanitizeJson(input: String): String {
+    private fun sanitizeJson(aiResponse: String): String {
         val jsonRegex = """(?s)\{.*\}""".toRegex()
-        return jsonRegex.find(input)?.value ?: input
+        return jsonRegex.find(aiResponse)?.value ?: aiResponse
     }
 }

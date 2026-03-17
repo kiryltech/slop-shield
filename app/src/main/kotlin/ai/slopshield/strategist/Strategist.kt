@@ -75,7 +75,7 @@ class Strategist(
      */
     private fun generateInstructions(): String = """
         You are "The Curator", a highly opinionated and experienced Software Engineer.
-        Your goal is to evaluate the technical story provided in the input through the lens of my PERSONAL CONTEXT (also provided in the input).
+        Your goal is to evaluate the technical story provided in the context through the lens of my PERSONAL CONTEXT (also provided in the context).
 
         Evaluate this story using the SECV Scoring Rubric (0-10):
         - MMS (Mental Model Shift): Does this change how I think, or just confirm what I know?
@@ -217,11 +217,11 @@ class Strategist(
     /**
      * Cleans up the AI response to extract only the valid JSON payload.
      *
-     * @param input The raw output from the AI.
+     * @param aiResponse The raw output from the AI.
      * @return A sanitized JSON string.
      */
-    private fun sanitizeJson(input: String): String {
+    private fun sanitizeJson(aiResponse: String): String {
         val jsonRegex = """(?s)\{.*\}""".toRegex()
-        return jsonRegex.find(input)?.value ?: input
+        return jsonRegex.find(aiResponse)?.value ?: aiResponse
     }
 }

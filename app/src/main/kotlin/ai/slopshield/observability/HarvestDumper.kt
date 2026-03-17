@@ -13,7 +13,7 @@ private val logger = KotlinLogging.logger {}
 /**
  * A debug component that dumps harvested story content to disk.
  * This is primarily used for troubleshooting scraping issues and observing the 
- * raw input before it gets passed to the AI analysis.
+ * raw context before it gets passed to the AI analysis.
  * Enabled only when debug mode is active.
  */
 @SlopListener

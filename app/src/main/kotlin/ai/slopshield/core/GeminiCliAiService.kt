@@ -45,16 +45,16 @@ open class GeminiCliAiService(
     private val dispatcher: CoroutineDispatcher = executor.asCoroutineDispatcher()
 
     /**
-     * Executes a Gemini CLI command with the given prompt and input content.
+     * Processes the given prompt and context content using the Gemini CLI.
      *
      * @param prompt The prompt to pass as the first argument to gemini.
-     * @param input The content to pipe into gemini's stdin.
+     * @param context The supporting content or data for the AI model to process.
      * @param timeoutSeconds How long to wait for the process to complete.
      * @return The result of the AI processing containing stdout, stderr, and exit code.
      */
     override suspend fun process(
         prompt: String,
-        input: String,
+        context: String,
         timeoutSeconds: Long
     ): AiResult = withContext(dispatcher) {
         // Use runBlocking to hold the thread pool thread and prevent yielding 
@@ -74,10 +74,10 @@ open class GeminiCliAiService(
                     process.errorStream.bufferedReader().use { it.readText() }.trim()
                 }
 
-                // Write input to process stdin
+                // Write context to process stdin
                 launch(Dispatchers.IO) {
                     try {
-                        process.outputStream.bufferedWriter().use { it.write(input) }
+                        process.outputStream.bufferedWriter().use { it.write(context) }
                     } catch (e: Exception) {
                         logger.warn { "AIService: Failed to write to process stdin: ${e.message}" }
                     }
