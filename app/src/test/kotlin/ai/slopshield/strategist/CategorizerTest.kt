@@ -32,7 +32,7 @@ class CategorizerTest {
     fun `test categorizer reacts to HarvestComplete and emits StoryCategorized`() = runTest {
         val id = "123"
         val cleanText = "This is a blog post about Kotlin."
-        val mockAiResponse = """{"category": "WRITING", "reasoning": "It looks like an article.", "aiInvolvement": "HAND_CRAFTED"}"""
+        val mockAiResponse = """{"category": "WRITING", "reasoning": "It looks like an article.", "aiInvolvement": "HAND_CRAFTED", "aiInvolvementReasoning": "Unique voice detected."}"""
 
         val mockAIService = MockAiService(AiResult(mockAiResponse, "", 0))
 
@@ -72,7 +72,7 @@ class CategorizerTest {
     fun `test categorizer handles unknown categories gracefully`() = runTest {
         val id = "456"
         val cleanText = "Something weird."
-        val mockAiResponse = """{"category": "INVALID_CAT", "reasoning": "I don't know what this is.", "aiInvolvement": "HAND_CRAFTED"}"""
+        val mockAiResponse = """{"category": "INVALID_CAT", "reasoning": "I don't know what this is.", "aiInvolvement": "HAND_CRAFTED", "aiInvolvementReasoning": "Unique voice detected."}"""
 
         val mockAIService = MockAiService(
             AiResult(mockAiResponse, "", 0)
@@ -115,7 +115,7 @@ class CategorizerTest {
         val cleanText = "Markdown wrap test."
         val mockAiResponse = """
             ```json
-            {"category": "DEMO", "reasoning": "Wrapped in code blocks.", "aiInvolvement": "HAND_CRAFTED"}
+            {"category": "DEMO", "reasoning": "Wrapped in code blocks.", "aiInvolvement": "HAND_CRAFTED", "aiInvolvementReasoning": "Unique voice detected."}
             ```
         """.trimIndent()
 
@@ -157,7 +157,7 @@ class CategorizerTest {
     fun `test categorizer identifies source category`() = runTest {
         val id = "abc"
         val cleanText = "Repository containing the source code for a new Kotlin library."
-        val mockAiResponse = """{"category": "SOURCE", "reasoning": "It's a code repository.", "aiInvolvement": "HAND_CRAFTED"}"""
+        val mockAiResponse = """{"category": "SOURCE", "reasoning": "It's a code repository.", "aiInvolvement": "HAND_CRAFTED", "aiInvolvementReasoning": "Unique voice detected."}"""
 
         val mockAIService = MockAiService(
             mockResult = AiResult(mockAiResponse, "", 0)

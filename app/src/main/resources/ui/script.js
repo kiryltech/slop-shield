@@ -302,6 +302,28 @@ function renderDetailPane(story) {
                     <p class="text-sm text-red-600 italic">An error occurred during the deep analysis process. You can try to force a re-analysis using the refresh button on the story card.</p>
                 </div>
             ` : '<p class="text-center p-10 text-slate-400 italic">Deep SECV analysis in progress...</p>'))}
+            
+            <section>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="material-symbols-outlined text-primary">category</span>
+                    <h3 class="text-sm font-bold uppercase tracking-wider">Categorization & AI</h3>
+                </div>
+                <div class="space-y-3">
+                    ${story.categoryReasoning ? `
+                        <div class="flex items-start gap-3">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 mt-0.5 shrink-0">Type</span>
+                            <p class="text-xs text-slate-600 dark:text-slate-400">${story.categoryReasoning}</p>
+                        </div>
+                    ` : ''}
+                    ${story.aiInvolvementReasoning ? `
+                        <div class="flex items-start gap-3">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded ${getAiInvolvementBg(story.aiInvolvement)} mt-0.5 shrink-0">AI</span>
+                            <p class="text-xs text-slate-600 dark:text-slate-400">${story.aiInvolvementReasoning}</p>
+                        </div>
+                    ` : ''}
+                </div>
+            </section>
+
             <section>
                 <div class="flex items-center gap-2 mb-3">
                     <span class="material-symbols-outlined text-primary">terminal</span>

@@ -339,6 +339,7 @@ enum class AiInvolvement {
  * @property category The identified category for the content.
  * @property reasoning The explanation for why this category was assigned.
  * @property aiInvolvement The estimated level of AI involvement in the content.
+ * @property aiInvolvementReasoning The rationale for the assigned AI involvement level.
  */
 @Serializable
 data class StoryCategorized(
@@ -346,11 +347,19 @@ data class StoryCategorized(
     val category: StoryCategory,
     val reasoning: String,
     val aiInvolvement: AiInvolvement = AiInvolvement.UNKNOWN,
+    val aiInvolvementReasoning: String? = null,
     @Serializable(with = InstantSerializer::class)
     override val timestamp: Instant = Instant.now()
 ) : ProjectableEvent {
     override fun project(repository: StoryRepository) {
-        repository.update(id) { it.copy(category = category, categoryReasoning = reasoning, aiInvolvement = aiInvolvement) }
+        repository.update(id) { 
+            it.copy(
+                category = category, 
+                categoryReasoning = reasoning, 
+                aiInvolvement = aiInvolvement,
+                aiInvolvementReasoning = aiInvolvementReasoning
+            ) 
+        }
     }
 }
 

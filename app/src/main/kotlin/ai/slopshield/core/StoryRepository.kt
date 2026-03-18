@@ -50,6 +50,7 @@ data class Story(
     val category: StoryCategory? = null,
     val categoryReasoning: String? = null,
     val aiInvolvement: AiInvolvement? = null,
+    val aiInvolvementReasoning: String? = null,
     val analysis: AnalysisComplete? = null,
     val failed: Boolean = false
 ) : JavaSerializable

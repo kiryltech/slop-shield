@@ -26,7 +26,8 @@ private val logger = KotlinLogging.logger {}
 data class CategorizationResult(
     val category: String,
     val reasoning: String,
-    val aiInvolvement: String
+    val aiInvolvement: String,
+    val aiInvolvementReasoning: String? = null
 )
 
 /**
@@ -44,7 +45,10 @@ class Categorizer(
 ) : SlopHandler<HarvestComplete> {
 
     private val prompt = """
-        Analyze the following web page content and categorize it into one of these categories:
+        Analyze the following web page content and provide a deep categorization and AI involvement analysis.
+
+        ### Part 1: Content Category
+        Categorize the content into one of these:
         - WRITING: Blog posts, articles, essays, news stories.
         - PRODUCT: SaaS landing pages, commercial products, tools for sale, marketing materials.
         - DEMO: Technical demos, interactive experiments, "Show HN" style prototypes.
@@ -52,16 +56,32 @@ class Categorizer(
         - VIDEO: Video content platforms like YouTube, Vimeo, or technical talks.
         - UNKNOWN: Anything that doesn't fit the above.
 
-        Also analyze the level of AI involvement in the content generation. Choose from:
-        - HAND_CRAFTED: Deeply personal, unique voice, highly specific technical details.
-        - ASSISTED: Mostly human-written but likely used AI for outlines or polishing.
-        - COLLABORATIVE: A mix of human insight and heavy AI structure.
-        - HIGH_AI: Primarily AI-generated with minimal human oversight.
-        - PURE_SLOP: Unedited, generic AI output designed for SEO/volume.
-        - UNKNOWN: Default or undetermined level of involvement.
+        ### Part 2: AI Involvement Scale
+        Analyze the level of AI involvement in the writing and structure. Be critical and look for "slop" markers:
+        - Repetitive sentence structures or "delving deep" style transitions.
+        - Generic, non-specific technical advice that lacks personal edge or unique engineering perspective.
+        - Listicles or "top 10" formats without significant unique commentary.
+        - Over-polished, corporate, or vision-only "future-speak" without implementation details.
+
+        Choose the most appropriate level:
+        - HAND_CRAFTED: Deeply personal, unique voice, highly specific technical details, "human" imperfections, or very strong opinionated writing.
+        - ASSISTED: Mostly human-written but shows signs of AI polishing, outline generation, or minor section completions. (Default to this if it feels "mostly human but too clean").
+        - COLLABORATIVE: A mix of human insight and heavy AI structure. Clear human ideas but formatted/padded by AI.
+        - HIGH_AI: Primarily AI-generated. The human provided the prompt, but the AI did the heavy lifting. Lacks "soul" or specific edge.
+        - PURE_SLOP: Unedited, generic AI output designed for SEO, volume, or low-effort engagement.
+        - UNKNOWN: Undetermined level of involvement.
+
+        ### Part 3: Reasoning
+        - Provide 'reasoning' for the category choice.
+        - Provide 'aiInvolvementReasoning' specifically detailing why you chose that AI involvement level (e.g., "Contains specific personal anecdotes" or "Uses repetitive GPT-style transitions").
 
         CRITICAL: Output ONLY a raw JSON object. Do not wrap it in markdown code blocks.
-        Format: {"category": "CATEGORY_NAME", "reasoning": "brief explanation", "aiInvolvement": "HAND_CRAFTED"}
+        Format: {
+            "category": "CATEGORY_NAME", 
+            "reasoning": "category explanation", 
+            "aiInvolvement": "INVOLVEMENT_LEVEL",
+            "aiInvolvementReasoning": "AI detection explanation"
+        }
     """.trimIndent()
 
     /**
@@ -116,7 +136,8 @@ class Categorizer(
                     id = event.id,
                     category = category,
                     reasoning = parsed.reasoning,
-                    aiInvolvement = involvement
+                    aiInvolvement = involvement,
+                    aiInvolvementReasoning = parsed.aiInvolvementReasoning
                 )
             )
         } else {
