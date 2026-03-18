@@ -51,11 +51,13 @@ function renderStories() {
             case 'high-signal': return score >= 7.5;
             case 'opposite': return s.analysis && s.analysis.alignment === 'OPPOSITE_VIEW' && score >= 5.0;
             case 'noise': return (s.category === 'PRODUCT' || s.category === 'SOURCE' || (s.analysis && s.analysis.alignment === 'IRRELEVANT'));
+            case 'failed': return s.failed;
             case 'inbox': 
             default:
-                // Inbox excludes noise by default
+                // Inbox excludes noise and failed by default
                 const isNoise = (s.category === 'PRODUCT' || s.category === 'SOURCE' || (s.analysis && s.analysis.alignment === 'IRRELEVANT'));
-                return !isNoise;
+                const isFailed = s.failed;
+                return !isNoise && !isFailed;
         }
     });
 
