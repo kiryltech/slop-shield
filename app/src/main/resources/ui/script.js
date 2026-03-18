@@ -112,6 +112,13 @@ searchInput.addEventListener('input', (e) => {
     renderStories();
 });
 
+function capitalize(str) {
+    if (!str) return '';
+    return str.split('_')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+              .join(' ');
+}
+
 function createStoryCard(story) {
     const analysis = story.analysis;
     const isIgnored = story.category === 'PRODUCT' || story.category === 'SOURCE';
@@ -126,7 +133,7 @@ function createStoryCard(story) {
     const categoryClass = (story.category || 'unknown').toLowerCase();
     const isActive = selectedStoryId === story.id;
     
-    const alignmentLabel = isFailed ? 'FAILED' : (isIgnored ? 'SKIPPED' : (analysis ? analysis.alignment.replace('_', ' ') : 'PENDING'));
+    const alignmentLabel = isFailed ? 'Failed' : (isIgnored ? 'Skipped' : (analysis ? capitalize(analysis.alignment) : 'Pending'));
     const alignmentClass = isFailed ? 'alignment-failed' : (isIgnored ? 'alignment-pending' : (analysis ? 'alignment-' + analysis.alignment.toLowerCase() : 'alignment-pending'));
     const isContentLoaded = !!story.cleanText;
 
@@ -148,7 +155,7 @@ function createStoryCard(story) {
                         <div>
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="text-[10px] font-bold px-2 py-0.5 rounded ${alignmentClass}">${alignmentLabel}</span>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${getHypeBg(analysis)}">${analysis ? 'HYPE: ' + analysis.hypeRisk : (isIgnored ? 'N/A' : (isFailed ? 'FAILED' : 'PENDING'))}</span>
+                                ${analysis && analysis.hypeRisk !== 'LOW' ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded ${getHypeBg(analysis)}">Hype: ${capitalize(analysis.hypeRisk)}</span>` : ''}
                                 ${story.aiInvolvement && story.aiInvolvement !== 'UNKNOWN' ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded ${getAiInvolvementBg(story.aiInvolvement)}">${getAiInvolvementLabel(story.aiInvolvement)}</span>` : ''}
                             </div>
                             <h3 class="font-bold text-lg group-hover:text-primary transition-colors">${story.title}</h3>
