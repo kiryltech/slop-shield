@@ -19,6 +19,7 @@ import io.ktor.server.http.content.staticResources
 import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -32,12 +33,25 @@ import io.ktor.websocket.send
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger {}
+
+/**
+ * Data class representing a manual story injection request.
+ *
+ * @property url The URL of the story to harvest.
+ * @property title An optional title for the story. If not provided, it will default to a placeholder.
+ */
+@Serializable
+data class ManualStoryRequest(
+    val url: String,
+    val title: String? = null
+)
 
 /**
  * A modern, interactive Web UI (V2) backend.
@@ -102,6 +116,45 @@ class WebServiceV2(
                 call.respond(recentActivity.getRecentEvents())
             }
 
+            post("/api/stories") {
+                try {
+                    val request = call.receive<ManualStoryRequest>()
+                    val url = request.url
+                    val title = request.title ?: "Manual Injection: $url"
+
+                    // Validate URL before emitting event
+                    try {
+                        val uri = java.net.URI(url)
+                        if (uri.scheme == null || (uri.scheme != "http" && uri.scheme != "https")) {
+                            return@post call.respond(
+                                HttpStatusCode.BadRequest,
+                                mapOf("error" to "Invalid protocol. Only http and https are supported.")
+                            )
+                        }
+                    } catch (e: Exception) {
+                        return@post call.respond(
+                            HttpStatusCode.BadRequest,
+                            mapOf("error" to "Malformed URL: ${e.message}")
+                        )
+                    }
+
+                    // Generate a unique ID based on URL hash to prevent duplicates if same URL is injected multiple times
+                    val id = "manual-" + UUID.nameUUIDFromBytes(url.toByteArray()).toString().take(8)
+
+                    logger.info { "WebServiceV2: Manual story injection requested for $url" }
+
+                    // Emit discovery to trigger the whole pipeline
+                    scope.launch {
+                        eventStream.emit(
+                            StoryDiscovered(id, title, url)
+                        )
+                    }
+                    call.respond(HttpStatusCode.Accepted, mapOf("id" to id))
+                } catch (e: Exception) {
+                    logger.error(e) { "WebServiceV2: Failed to process manual story injection" }
+                    call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Unknown error")))
+                }
+            }
             post("/api/stories/{id}/reload") {
                 val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest)
                 val story = repository.get(id) ?: return@post call.respond(HttpStatusCode.NotFound)
